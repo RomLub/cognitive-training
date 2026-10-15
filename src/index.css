@@ -441,7 +441,15 @@ kbd {
 }
 
 .ink-yellow {
-  color: #f08c00;
+  color: #d9a400;
+}
+
+.ink-purple {
+  color: #9c36b5;
+}
+
+.ink-brown {
+  color: #8b5a2b;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -453,9 +461,38 @@ kbd {
     color: #51cf66;
   }
 
+  .ink-red {
+    color: #ff6b6b;
+  }
+
   .ink-yellow {
     color: #fcc419;
   }
+
+  .ink-purple {
+    color: #da77f2;
+  }
+
+  .ink-brown {
+    color: #a9744f;
+  }
+}
+
+/* Task-switching cue: neutral ink so it never competes with the colored word. */
+.stroop-cue {
+  text-align: center;
+  margin: 16px auto 0;
+  width: fit-content;
+  padding: 2px 12px;
+  border: 2px solid var(--text);
+  border-radius: var(--radius);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
+.stroop-cue.word {
+  background: var(--text);
+  color: var(--bg);
 }
 
 .pair {
@@ -467,4 +504,95 @@ kbd {
   font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
   font-size: clamp(1.4rem, 5vw, 2.4rem);
   letter-spacing: 0.12em;
+}
+
+.max-level {
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+}
+
+/* Progress chart */
+.chart {
+  position: relative;
+}
+
+.chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.chart-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.chart-axis,
+.chart-end-label {
+  fill: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-end-label {
+  fill: var(--text);
+  font-weight: 600;
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.chart-dot {
+  fill: var(--accent);
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+
+.chart-dot.active {
+  r: 6;
+}
+
+.chart-crosshair {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+
+.chart-tooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 12px));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+}
+
+.delta.ok {
+  color: var(--ok);
+}
+
+.delta.ko {
+  color: var(--ko);
+}
+
+.small {
+  font-size: 0.85rem;
+}
+
+.choice-grid.three-cols {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 480px;
 }

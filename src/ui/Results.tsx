@@ -33,6 +33,11 @@ export function Results({ config, record, onRestart, onHome }: Props) {
           </dd>
         </div>
       </dl>
+      {record.endLevel >= config.bounds.max && (
+        <p className="max-level" role="status">
+          🏁 Niveau maximal atteint ({config.bounds.max}) : cet exercice ne te met plus en difficulté. Il faudra l’étendre.
+        </p>
+      )}
       <h3>Par {config.categoryNoun}</h3>
       <CategoryTable
         stats={categoryStats([record])}

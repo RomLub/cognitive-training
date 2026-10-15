@@ -53,7 +53,9 @@ function watchSequence(): number[] {
   return seen
 }
 
-const INK_TO_NAME: Record<string, string> = { red: 'Rouge', blue: 'Bleu', green: 'Vert', yellow: 'Jaune' }
+const INK_TO_NAME: Record<string, string> = {
+  red: 'Rouge', blue: 'Bleu', green: 'Vert', yellow: 'Jaune', purple: 'Violet', brown: 'Marron',
+}
 
 function inkOnScreen(): string {
   return [...document.querySelector('.stroop-word')!.classList].find((c) => c.startsWith('ink-'))!.slice(4)
@@ -70,7 +72,10 @@ function answerCurrentItem() {
     return
   }
   if (document.querySelector('.stroop-word') !== null) {
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${INK_TO_NAME[inkOnScreen()]}`) }))
+    const readWord = screen.queryByTestId('stroop-cue')?.textContent === 'MOT'
+    const word = document.querySelector('.stroop-word')!.textContent!
+    const name = readWord ? word.charAt(0) + word.slice(1).toLowerCase() : INK_TO_NAME[inkOnScreen()]
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${name}`) }))
     return
   }
   if (document.querySelector('.pair') !== null) {
@@ -421,5 +426,104 @@ describe('App voice answers', () => {
     clickInCard('Calcul mental', 'Commencer')
     act(() => activeRecognition().onerror?.({ error: 'not-allowed' }))
     expect(screen.getByText(/Accès au micro refusé/)).toBeTruthy()
+  })
+})
+
+describe('App difficulty ceiling, evolution and chart', () => {
+  afterEach(cleanup)
+
+  function attentionRecord(endLevel: number): SessionRecord {
+    return {
+      id: `a${endLevel}`, domain: 'attention', startedAt: '2026-10-14T10:00:00.000Z',
+      startLevel: endLevel, endLevel, items: 24, correct: 22, avgResponseMs: 900,
+    }
+  }
+
+  it('attention from level 11 shows the cue and accepts reading the word when asked', () => {
+    const repo = new MemoryRepository()
+    repo.records.push(attentionRecord(13))
+    render(<App repository={repo} />)
+    clickInCard('Attention', 'Commencer')
+    expect(screen.getByText('Niveau 13')).toBeTruthy()
+    expect(screen.getByText(/Suis la consigne/)).toBeTruthy()
+    // Answer correctly until a MOT trial shows up, then check it was accepted.
+    for (let guard = 0; guard < 23; guard++) {
+      const isWord = screen.getByTestId('stroop-cue').textContent === 'MOT'
+      answerCurrentItem()
+      if (isWord) {
+        expect(screen.getAllByText(/^✓/).length).toBeGreaterThan(0)
+        return
+      }
+    }
+    throw new Error('No MOT trial in 23 items')
+  })
+
+  it('flags a session ending at the maximum level', () => {
+    const repo = new MemoryRepository()
+    repo.records.push({
+      id: 'top', domain: 'calculation', startedAt: '2026-10-14T10:00:00.000Z',
+      startLevel: 10, endLevel: 10, items: 20, correct: 20, avgResponseMs: 3000,
+    })
+    render(<App repository={repo} />)
+    clickInCard('Calcul mental', 'Commencer')
+    for (let i = 0; i < CALC_SESSION_LENGTH; i++) answerCurrentItem()
+    expect(screen.getByText(/Niveau maximal atteint \(10\)/)).toBeTruthy()
+  })
+
+  it('does not flag a session below the maximum', () => {
+    render(<App repository={new MemoryRepository()} />)
+    clickInCard('Calcul mental', 'Commencer')
+    for (let i = 0; i < CALC_SESSION_LENGTH; i++) answerCurrentItem()
+    expect(screen.queryByText(/Niveau maximal atteint/)).toBeNull()
+  })
+
+  function calcHistory(levels: number[]): SessionRecord[] {
+    return levels.map((endLevel, i) => ({
+      id: `c${i}`, domain: 'calculation', startedAt: `2026-10-${String(i + 1).padStart(2, '0')}T10:00:00.000Z`,
+      startLevel: 1, endLevel, items: 20, correct: 10 + i, avgResponseMs: 4000 - i * 100,
+    }))
+  }
+
+  it('shows the baseline being built, then the evolution since the start', () => {
+    const repo = new MemoryRepository()
+    repo.records.push(...calcHistory([2, 3]))
+    const { unmount } = render(<App repository={repo} />)
+    clickInCard('Calcul mental', 'Progrès')
+    expect(screen.getByText(/Ligne de base en cours : 2\/3/)).toBeTruthy()
+    unmount()
+
+    const repo2 = new MemoryRepository()
+    repo2.records.push(...calcHistory([2, 3, 4, 6, 7, 8]))
+    render(<App repository={repo2} />)
+    clickInCard('Calcul mental', 'Progrès')
+    // Baseline level (2+3+4)/3 = 3,0 ; recent (6+7+8)/3 = 7,0.
+    expect(screen.getByText('▲ +4,0')).toBeTruthy()
+    expect(screen.getByText(/Départ = tes 3 premières sessions/)).toBeTruthy()
+  })
+
+  it('draws the level chart with one point per session and a hover tooltip', () => {
+    const repo = new MemoryRepository()
+    repo.records.push(...calcHistory([2, 3, 5]))
+    render(<App repository={repo} />)
+    clickInCard('Calcul mental', 'Progrès')
+    const chart = screen.getByRole('img', { name: /Niveau en fin de session sur 3 sessions, actuellement 5/ })
+    expect(chart.querySelectorAll('circle')).toHaveLength(3)
+
+    const svg = chart as unknown as SVGSVGElement
+    svg.getBoundingClientRect = () => ({ left: 0, top: 0, width: 640, height: 200, right: 640, bottom: 200, x: 0, y: 0, toJSON: () => ({}) })
+    // Pointer at the far right snaps to the last session.
+    fireEvent.pointerMove(screen.getByTestId('chart-hit-area'), { clientX: 600, clientY: 50 })
+    const tooltip = screen.getByRole('tooltip')
+    expect(tooltip.textContent).toContain('Niveau 1 → 5')
+    fireEvent.pointerLeave(screen.getByTestId('chart-hit-area'))
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+
+  it('explains the chart needs 2 sessions', () => {
+    const repo = new MemoryRepository()
+    repo.records.push(...calcHistory([2]))
+    render(<App repository={repo} />)
+    clickInCard('Calcul mental', 'Progrès')
+    expect(screen.getByText('Le graphique apparaîtra après 2 sessions.')).toBeTruthy()
   })
 })

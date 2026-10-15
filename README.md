@@ -17,15 +17,22 @@ npm run build   # typecheck + build
 | --- | --- | --- | --- |
 | Calcul mental | Opérations + − × ÷, 20 par session | opération | non |
 | Mémoire de travail | Empan de chiffres : restituer dans l'ordre direct (3 → 12 chiffres) ou inverse (un de moins) | mode | non |
-| Attention | Stroop : nommer la couleur de l'encre, pas le mot (touches R B V J) | concordant / discordant | 3 s → 0,9 s |
+| Attention | Stroop : nommer la couleur de l'encre, pas le mot (touches R B V J, + I M). 20 niveaux : 1-10 classique, 11-15 consigne alternée ENCRE / MOT, 16-20 six couleurs | concordant / discordant / lire le mot | 3 s → 0,74 s |
 | Logique | Suites de nombres : arithmétique, géométrique, alternée, écarts croissants, somme des précédents, entremêlée | type de suite | non |
 | Vitesse de traitement | Deux séries identiques ou non ? (← / →) | identiques / différentes | selon longueur et niveau |
 
 Tous les exercices partagent :
-- **10 niveaux adaptatifs** : 3 bonnes réponses d'affilée → niveau +1, 2 erreurs d'affilée → niveau −1 ;
-  chaque domaine reprend au dernier niveau atteint.
+- **Niveaux adaptatifs** (10, ou 20 pour l'attention) : 3 bonnes réponses d'affilée → niveau +1, 2 erreurs d'affilée →
+  niveau −1 ; chaque domaine reprend au dernier niveau atteint. Une session terminée au niveau maximal est signalée :
+  c'est le signe qu'il faut étendre l'exercice.
 - **Points faibles** : stats par catégorie sur les 10 dernières sessions ; la catégorie la moins réussie
   (au moins 8 réponses) est signalée, et les sessions suivantes insistent dessus (50 % des tirages).
+
+## Progrès
+
+Par domaine : graphique du niveau en fin de session (survol = détail), et **évolution par rapport à soi-même** :
+la ligne de base est la moyenne des 3 premières sessions, comparée aux 3 dernières (niveau, précision, temps).
+Il n'y a pas de comparaison à la population : les niveaux sont des paliers internes, pas des scores normés.
 
 ## Programmes
 
@@ -63,7 +70,6 @@ et une entrée dans `ui/domains.ts`.
 ## Dette technique connue
 
 - Stockage localStorage seulement, sans export ni sauvegarde.
-- Pas de graphique de progression, seulement des tableaux.
 - Les temps de réponse à la voix incluent le délai de reconnaissance et sont mélangés à ceux au clavier.
 - Le ciblage ne vise qu'une catégorie à la fois, avec une part fixe.
 - Un exercice par domaine ; la batterie peut s'étoffer (n-back, rotation mentale, calcul en chaîne…).

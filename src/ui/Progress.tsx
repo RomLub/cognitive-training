@@ -1,9 +1,12 @@
+import { domainEvolution } from '../core/baseline'
 import { RECENT_WINDOW } from '../core/focus'
 import { accuracy, domainProgress, MIN_ITEMS_FOR_WEAKNESS } from '../core/stats'
 import type { SessionRecord } from '../core/types'
 import { CategoryTable } from './CategoryTable'
 import type { DomainUi } from './domains'
+import { EvolutionPanel } from './Evolution'
 import { capitalize, formatDate, formatPercent, formatSeconds } from './format'
+import { LevelChart } from './LevelChart'
 
 interface Props {
   config: DomainUi
@@ -47,6 +50,12 @@ export function Progress({ config, records, onBack }: Props) {
           </dd>
         </div>
       </dl>
+
+      <h3>Niveau en fin de session</h3>
+      <LevelChart records={sessions} bounds={config.bounds} />
+
+      <h3>Depuis le début</h3>
+      <EvolutionPanel evolution={domainEvolution(config.domain, records)} />
 
       <h3>
         Par {config.categoryNoun} ({RECENT_WINDOW} dernières sessions)
