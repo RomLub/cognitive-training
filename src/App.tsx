@@ -2,18 +2,23 @@ import { useMemo, useState } from 'react'
 import { domainProgress } from './core/stats'
 import type { SessionRecord } from './core/types'
 import { analyzeOperators } from './domains/calculation/focus'
-import { MIN_LEVEL, type Operator } from './domains/calculation/levels'
+import { LEVEL_BOUNDS as CALC_BOUNDS, type Operator } from './domains/calculation/levels'
+import { analyzeSpanModes } from './domains/memory/focus'
+import { LEVEL_BOUNDS as MEMORY_BOUNDS, type SpanMode } from './domains/memory/span'
 import { LocalStorageSessionRepository, type SessionRepository } from './storage/sessionRepository'
 import { CalculationSession } from './ui/CalculationSession'
+import { DOMAIN_UI, isTrainableDomain, type TrainableDomain } from './ui/domains'
 import { Home } from './ui/Home'
+import { MemorySession } from './ui/MemorySession'
 import { Progress } from './ui/Progress'
 import { Results } from './ui/Results'
 
 type Screen =
   | { name: 'home' }
   | { name: 'calculation'; startLevel: number; focus: Operator | null; key: number }
-  | { name: 'results'; record: SessionRecord }
-  | { name: 'progress' }
+  | { name: 'memory'; startLevel: number; focus: SpanMode | null; key: number }
+  | { name: 'results'; domain: TrainableDomain; record: SessionRecord }
+  | { name: 'progress'; domain: TrainableDomain }
 
 function loadRecords(repo: SessionRepository): { records: SessionRecord[]; error: string | null } {
   try {
@@ -29,13 +34,30 @@ export default function App({ repository }: { repository?: SessionRepository }) 
   const [{ records, error }, setState] = useState(() => loadRecords(repo))
   const [screen, setScreen] = useState<Screen>({ name: 'home' })
 
-  function startCalculation() {
-    const startLevel = domainProgress('calculation', records).currentLevel ?? MIN_LEVEL
-    const focus = analyzeOperators(records).weakest?.category ?? null
-    setScreen({ name: 'calculation', startLevel, focus, key: Date.now() })
+  function startSession(domain: TrainableDomain) {
+    const key = Date.now()
+    switch (domain) {
+      case 'calculation':
+        setScreen({
+          name: 'calculation',
+          startLevel: domainProgress('calculation', records).currentLevel ?? CALC_BOUNDS.min,
+          focus: analyzeOperators(records).weakest?.category ?? null,
+          key,
+        })
+        return
+      case 'memory':
+        setScreen({
+          name: 'memory',
+          startLevel: domainProgress('memory', records).currentLevel ?? MEMORY_BOUNDS.min,
+          focus: analyzeSpanModes(records).weakest?.category ?? null,
+          key,
+        })
+        return
+    }
   }
 
   function finishSession(record: SessionRecord) {
+    if (!isTrainableDomain(record.domain)) throw new Error(`Session finished for untrainable domain: ${record.domain}`)
     try {
       repo.add(record)
       setState(loadRecords(repo))
@@ -43,7 +65,7 @@ export default function App({ repository }: { repository?: SessionRepository }) 
       console.error('Failed to save session', err)
       setState((s) => ({ ...s, error: `Session non enregistrée : ${err instanceof Error ? err.message : String(err)}` }))
     }
-    setScreen({ name: 'results', record })
+    setScreen({ name: 'results', domain: record.domain, record })
   }
 
   const home = () => setScreen({ name: 'home' })
@@ -65,13 +87,23 @@ export default function App({ repository }: { repository?: SessionRepository }) 
       )}
 
       {screen.name === 'home' && (
-        <Home records={records} onStartCalculation={startCalculation} onShowProgress={() => setScreen({ name: 'progress' })} />
+        <Home records={records} onStart={startSession} onShowProgress={(domain) => setScreen({ name: 'progress', domain })} />
       )}
       {screen.name === 'calculation' && (
         <CalculationSession key={screen.key} startLevel={screen.startLevel} focus={screen.focus} onFinish={finishSession} onQuit={home} />
       )}
-      {screen.name === 'results' && <Results record={screen.record} onRestart={startCalculation} onHome={home} />}
-      {screen.name === 'progress' && <Progress records={records} onBack={home} />}
+      {screen.name === 'memory' && (
+        <MemorySession key={screen.key} startLevel={screen.startLevel} focus={screen.focus} onFinish={finishSession} onQuit={home} />
+      )}
+      {screen.name === 'results' && (
+        <Results
+          config={DOMAIN_UI[screen.domain]}
+          record={screen.record}
+          onRestart={() => startSession(screen.domain)}
+          onHome={home}
+        />
+      )}
+      {screen.name === 'progress' && <Progress config={DOMAIN_UI[screen.domain]} records={records} onBack={home} />}
     </main>
   )
 }

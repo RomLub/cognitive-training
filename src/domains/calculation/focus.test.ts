@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { SessionRecord } from '../../core/types'
-import { analyzeOperators, RECENT_WINDOW } from './focus'
+import { RECENT_WINDOW } from '../../core/focus'
+import { analyzeOperators } from './focus'
 
 function session(day: number, breakdown: SessionRecord['breakdown']): SessionRecord {
   return {

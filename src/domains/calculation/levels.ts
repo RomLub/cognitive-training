@@ -1,3 +1,5 @@
+import type { LevelBounds } from '../../core/adaptive'
+
 export type Operator = '+' | '-' | '×' | '÷'
 
 export function isOperator(value: string): value is Operator {
@@ -32,6 +34,7 @@ export const LEVELS: readonly LevelSpec[] = [
 
 export const MIN_LEVEL = 1
 export const MAX_LEVEL = LEVELS.length
+export const LEVEL_BOUNDS: LevelBounds = { min: MIN_LEVEL, max: MAX_LEVEL }
 
 export function getLevelSpec(level: number): LevelSpec {
   const spec = LEVELS[level - 1]

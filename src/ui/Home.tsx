@@ -1,40 +1,45 @@
 import { domainProgress } from '../core/stats'
 import type { CognitiveDomain, SessionRecord } from '../core/types'
+import { DOMAIN_UI, TRAINABLE_DOMAINS, type TrainableDomain } from './domains'
 
 interface Props {
   records: readonly SessionRecord[]
-  onStartCalculation: () => void
-  onShowProgress: () => void
+  onStart: (domain: TrainableDomain) => void
+  onShowProgress: (domain: TrainableDomain) => void
 }
 
 const UPCOMING: ReadonlyArray<{ domain: CognitiveDomain; label: string }> = [
-  { domain: 'memory', label: 'Mémoire de travail' },
   { domain: 'attention', label: 'Attention' },
   { domain: 'logic', label: 'Logique' },
   { domain: 'speed', label: 'Vitesse de traitement' },
 ]
 
-export function Home({ records, onStartCalculation, onShowProgress }: Props) {
-  const calc = domainProgress('calculation', records)
+export function Home({ records, onStart, onShowProgress }: Props) {
   return (
     <section>
       <div className="domain-grid">
-        <article className="domain-card active">
-          <h2>Calcul mental</h2>
-          <p className="muted">
-            {calc.sessions === 0
-              ? '20 opérations, difficulté adaptative.'
-              : `Niveau ${calc.currentLevel} · ${calc.sessions} session${calc.sessions > 1 ? 's' : ''}`}
-          </p>
-          <div className="actions">
-            <button type="button" onClick={onStartCalculation}>
-              Commencer
-            </button>
-            <button type="button" className="secondary" onClick={onShowProgress}>
-              Progrès
-            </button>
-          </div>
-        </article>
+        {TRAINABLE_DOMAINS.map((domain) => {
+          const config = DOMAIN_UI[domain]
+          const progress = domainProgress(domain, records)
+          return (
+            <article key={domain} className="domain-card active" aria-label={config.title}>
+              <h2>{config.title}</h2>
+              <p className="muted">
+                {progress.sessions === 0
+                  ? config.description
+                  : `Niveau ${progress.currentLevel} · ${progress.sessions} session${progress.sessions > 1 ? 's' : ''}`}
+              </p>
+              <div className="actions">
+                <button type="button" onClick={() => onStart(domain)}>
+                  Commencer
+                </button>
+                <button type="button" className="secondary" onClick={() => onShowProgress(domain)}>
+                  Progrès
+                </button>
+              </div>
+            </article>
+          )
+        })}
         {UPCOMING.map((d) => (
           <article key={d.domain} className="domain-card disabled" aria-disabled="true">
             <h2>{d.label}</h2>

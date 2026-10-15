@@ -256,3 +256,13 @@ tr.weak td {
   color: var(--ko);
   font-weight: 600;
 }
+
+.span-mode {
+  text-align: center;
+  margin: 16px 0 0;
+  font-weight: 600;
+}
+
+.span-mode.backward {
+  color: var(--accent);
+}

@@ -1,20 +1,21 @@
 import { accuracy, categoryStats } from '../core/stats'
 import type { SessionRecord } from '../core/types'
-import { OPERATOR_LABELS, OPERATOR_ORDER } from '../domains/calculation/labels'
 import { CategoryTable } from './CategoryTable'
-import { formatPercent, formatSeconds } from './format'
+import type { DomainUi } from './domains'
+import { capitalize, formatPercent, formatSeconds } from './format'
 
 interface Props {
+  config: DomainUi
   record: SessionRecord
   onRestart: () => void
   onHome: () => void
 }
 
-export function Results({ record, onRestart, onHome }: Props) {
+export function Results({ config, record, onRestart, onHome }: Props) {
   const levelDelta = record.endLevel - record.startLevel
   return (
     <section className="results">
-      <h2>Session terminée</h2>
+      <h2>Session terminée — {config.title}</h2>
       <dl className="stat-grid">
         <div>
           <dt>Précision</dt>
@@ -32,8 +33,13 @@ export function Results({ record, onRestart, onHome }: Props) {
           </dd>
         </div>
       </dl>
-      <h3>Par opération</h3>
-      <CategoryTable stats={categoryStats([record])} labels={OPERATOR_LABELS} order={OPERATOR_ORDER} />
+      <h3>Par {config.categoryNoun}</h3>
+      <CategoryTable
+        stats={categoryStats([record])}
+        labels={config.labels}
+        header={capitalize(config.categoryNoun)}
+        order={config.order}
+      />
       <div className="actions">
         <button type="button" onClick={onRestart}>
           Nouvelle session

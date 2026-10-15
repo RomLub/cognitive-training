@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { initialAdaptiveState, updateAdaptive } from '../core/adaptive'
+import { buildSessionRecord } from '../core/session'
 import type { ItemResult, SessionRecord } from '../core/types'
-import { initialAdaptiveState, updateAdaptive } from '../domains/calculation/adaptive'
 import { formatProblem, generateProblem, type Problem } from '../domains/calculation/generator'
 import { OPERATOR_LABELS } from '../domains/calculation/labels'
-import type { Operator } from '../domains/calculation/levels'
-import { buildSessionRecord, parseAnswer, SESSION_LENGTH } from '../domains/calculation/session'
+import { LEVEL_BOUNDS, type Operator } from '../domains/calculation/levels'
+import { parseAnswer, SESSION_LENGTH } from '../domains/calculation/session'
 
 interface Props {
   startLevel: number
@@ -20,7 +21,7 @@ interface Feedback {
 }
 
 export function CalculationSession({ startLevel, focus, onFinish, onQuit }: Props) {
-  const [adaptive, setAdaptive] = useState(() => initialAdaptiveState(startLevel))
+  const [adaptive, setAdaptive] = useState(() => initialAdaptiveState(startLevel, LEVEL_BOUNDS))
   const [problem, setProblem] = useState<Problem>(() => generateProblem(adaptive.level, Math.random, focus))
   const [input, setInput] = useState('')
   const [results, setResults] = useState<ItemResult[]>([])
@@ -46,14 +47,15 @@ export function CalculationSession({ startLevel, focus, onFinish, onQuit }: Prop
       responseMs: Math.round(performance.now() - shownAt.current),
     }
     const nextResults = [...results, result]
-    const nextAdaptive = updateAdaptive(adaptive, correct)
+    const nextAdaptive = updateAdaptive(adaptive, correct, LEVEL_BOUNDS)
 
     if (nextResults.length >= SESSION_LENGTH) {
       onFinish(
         buildSessionRecord({
           id: crypto.randomUUID(),
+          domain: 'calculation',
           startedAt,
-          startLevel: initialAdaptiveState(startLevel).level,
+          startLevel: initialAdaptiveState(startLevel, LEVEL_BOUNDS).level,
           endLevel: nextAdaptive.level,
           results: nextResults,
         }),
