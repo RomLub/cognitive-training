@@ -1,6 +1,12 @@
-import { accuracy, domainProgress } from '../core/stats'
+import { accuracy, categoryStats, domainProgress, MIN_ITEMS_FOR_WEAKNESS, recentSessions, weakestCategory } from '../core/stats'
 import type { SessionRecord } from '../core/types'
+import { OPERATOR_LABELS, OPERATOR_ORDER } from '../domains/calculation/labels'
+import type { Operator } from '../domains/calculation/levels'
+import { CategoryTable } from './CategoryTable'
 import { formatDate, formatPercent, formatSeconds } from './format'
+
+/** Per-operation stats only look at recent sessions so the weak point reflects the current state. */
+const RECENT_WINDOW = 10
 
 interface Props {
   records: readonly SessionRecord[]
@@ -9,6 +15,8 @@ interface Props {
 
 export function Progress({ records, onBack }: Props) {
   const calc = domainProgress('calculation', records)
+  const opStats = categoryStats(recentSessions('calculation', records, RECENT_WINDOW))
+  const weakest = weakestCategory(opStats)
   const sessions = records.filter((r) => r.domain === 'calculation').toReversed()
 
   return (
@@ -39,6 +47,15 @@ export function Progress({ records, onBack }: Props) {
         </div>
       </dl>
 
+      <h3>Par opération ({RECENT_WINDOW} dernières sessions)</h3>
+      <p className={weakest === null ? 'muted' : 'weak-callout'}>
+        {weakest === null
+          ? `Aucun point faible identifié pour l'instant (minimum ${MIN_ITEMS_FOR_WEAKNESS} réponses par opération).`
+          : `Point faible : ${OPERATOR_LABELS[weakest.category as Operator] ?? weakest.category} — ${formatPercent(weakest.accuracy)} de réussite.`}
+      </p>
+      <CategoryTable stats={opStats} labels={OPERATOR_LABELS} order={OPERATOR_ORDER} weakest={weakest?.category ?? null} />
+
+      <h3>Historique</h3>
       {sessions.length === 0 ? (
         <p className="muted">Aucune session pour l'instant.</p>
       ) : (

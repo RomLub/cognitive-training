@@ -41,4 +41,17 @@ describe('LocalStorageSessionRepository', () => {
     expect(() => new LocalStorageSessionRepository().add(bad)).toThrow()
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
   })
+
+  it('round-trips the per-category breakdown and still reads legacy records without one', () => {
+    const withBreakdown: SessionRecord = { ...record, id: 'b', breakdown: { '+': { items: 20, correct: 18, totalResponseMs: 50000 } } }
+    const repo = new LocalStorageSessionRepository()
+    repo.add(record)
+    repo.add(withBreakdown)
+    expect(repo.list()).toEqual([record, withBreakdown])
+  })
+
+  it('fails loudly on a malformed breakdown', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([{ ...record, breakdown: { '+': { items: 'x' } } }]))
+    expect(() => new LocalStorageSessionRepository().list()).toThrow(StorageCorruptedError)
+  })
 })

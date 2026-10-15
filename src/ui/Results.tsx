@@ -1,5 +1,7 @@
-import { accuracy } from '../core/stats'
+import { accuracy, categoryStats } from '../core/stats'
 import type { SessionRecord } from '../core/types'
+import { OPERATOR_LABELS, OPERATOR_ORDER } from '../domains/calculation/labels'
+import { CategoryTable } from './CategoryTable'
 import { formatPercent, formatSeconds } from './format'
 
 interface Props {
@@ -30,6 +32,8 @@ export function Results({ record, onRestart, onHome }: Props) {
           </dd>
         </div>
       </dl>
+      <h3>Par opération</h3>
+      <CategoryTable stats={categoryStats([record])} labels={OPERATOR_LABELS} order={OPERATOR_ORDER} />
       <div className="actions">
         <button type="button" onClick={onRestart}>
           Nouvelle session

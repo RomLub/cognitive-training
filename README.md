@@ -16,6 +16,8 @@ npm run build   # typecheck + build
 - **Calcul mental** : sessions de 20 opérations (+ − × ÷), 10 niveaux, difficulté adaptative
   (3 bonnes réponses d'affilée → niveau +1, 2 erreurs d'affilée → niveau −1). Reprise au dernier niveau atteint.
 - **Suivi** : historique des sessions (précision, temps moyen, niveau) stocké en localStorage sur l'appareil.
+- **Points faibles** : stats par opération sur les 10 dernières sessions ; l'opération la moins réussie
+  (au moins 8 réponses) est signalée, le temps servant à départager les ex æquo.
 - Mémoire, attention, logique, vitesse : à venir.
 
 ## Structure
@@ -34,4 +36,4 @@ Chaque domaine produit des `SessionRecord` communs : c'est ce qui permettra de c
 
 - Stockage localStorage seulement, sans export ni sauvegarde.
 - Pas de graphique de progression, seulement un tableau.
-- Statistiques non détaillées par opération (+ − × ÷).
+- Les points faibles sont seulement affichés : la génération des exercices ne les cible pas encore.

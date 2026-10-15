@@ -24,8 +24,8 @@ describe('buildSessionRecord', () => {
       startLevel: 2,
       endLevel: 3,
       results: [
-        { level: 2, correct: true, responseMs: 1000 },
-        { level: 2, correct: false, responseMs: 3000 },
+        { level: 2, category: '+', correct: true, responseMs: 1000 },
+        { level: 2, category: '×', correct: false, responseMs: 3000 },
       ],
     })
     expect(record).toEqual({
@@ -37,6 +37,10 @@ describe('buildSessionRecord', () => {
       items: 2,
       correct: 1,
       avgResponseMs: 2000,
+      breakdown: {
+        '+': { items: 1, correct: 1, totalResponseMs: 1000 },
+        '×': { items: 1, correct: 0, totalResponseMs: 3000 },
+      },
     })
   })
 })

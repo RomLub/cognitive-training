@@ -236,3 +236,18 @@ th {
   color: var(--muted);
   font-weight: 500;
 }
+
+h3 {
+  margin: 24px 0 8px;
+  font-size: 1rem;
+}
+
+tr.weak td {
+  color: var(--ko);
+  font-weight: 600;
+}
+
+.weak-callout {
+  color: var(--ko);
+  font-weight: 600;
+}

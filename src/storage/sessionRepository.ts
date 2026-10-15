@@ -30,8 +30,18 @@ function isSessionRecord(value: unknown): value is SessionRecord {
     typeof r.endLevel === 'number' &&
     typeof r.items === 'number' &&
     typeof r.correct === 'number' &&
-    typeof r.avgResponseMs === 'number'
+    typeof r.avgResponseMs === 'number' &&
+    (r.breakdown === undefined || isBreakdown(r.breakdown))
   )
+}
+
+function isBreakdown(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
+  return Object.values(value).every((t: unknown) => {
+    if (typeof t !== 'object' || t === null) return false
+    const c = t as Record<string, unknown>
+    return typeof c.items === 'number' && typeof c.correct === 'number' && typeof c.totalResponseMs === 'number'
+  })
 }
 
 export class LocalStorageSessionRepository implements SessionRepository {

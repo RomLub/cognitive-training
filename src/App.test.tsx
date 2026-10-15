@@ -45,11 +45,30 @@ describe('App calculation flow', () => {
     }
 
     expect(screen.getByText('Session terminée')).toBeTruthy()
-    expect(screen.getByText('100 %')).toBeTruthy()
+    // Overall precision plus one row per operation practised.
+    expect(screen.getAllByText('100 %').length).toBeGreaterThanOrEqual(2)
     expect(repo.records).toHaveLength(1)
     const saved = repo.records[0]!
     expect(saved.correct).toBe(SESSION_LENGTH)
     expect(saved.endLevel).toBeGreaterThan(saved.startLevel)
+    const breakdownItems = Object.values(saved.breakdown ?? {}).reduce((sum, t) => sum + t.items, 0)
+    expect(breakdownItems).toBe(SESSION_LENGTH)
+    expect(screen.getByText('Par opération')).toBeTruthy()
+  })
+
+  it('flags the weakest operation on the progress page', () => {
+    const repo = new MemoryRepository()
+    repo.records.push({
+      id: 'prev', domain: 'calculation', startedAt: '2026-10-14T10:00:00.000Z',
+      startLevel: 5, endLevel: 5, items: 20, correct: 15, avgResponseMs: 3000,
+      breakdown: {
+        '+': { items: 10, correct: 10, totalResponseMs: 20000 },
+        '÷': { items: 10, correct: 5, totalResponseMs: 40000 },
+      },
+    })
+    render(<App repository={repo} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Progrès' }))
+    expect(screen.getByText(/Point faible : Division — 50 %/)).toBeTruthy()
   })
 
   it('resumes at the last reached level', () => {

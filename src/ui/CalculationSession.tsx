@@ -35,7 +35,12 @@ export function CalculationSession({ startLevel, onFinish, onQuit }: Props) {
     if (answer === null) return
 
     const correct = answer === problem.answer
-    const result: ItemResult = { level: problem.level, correct, responseMs: Math.round(performance.now() - shownAt.current) }
+    const result: ItemResult = {
+      level: problem.level,
+      category: problem.operator,
+      correct,
+      responseMs: Math.round(performance.now() - shownAt.current),
+    }
     const nextResults = [...results, result]
     const nextAdaptive = updateAdaptive(adaptive, correct)
 
