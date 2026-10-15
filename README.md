@@ -6,41 +6,64 @@ Application web locale pour entretenir ses capacités cognitives.
 
 ```bash
 npm install
-npm run dev     # http://localhost:5173
-npm test        # tests unitaires (Vitest)
+npm run dev     # http://localhost:5173 (port fixe : l'historique est lié à l'adresse)
+npm test        # tests (Vitest)
 npm run build   # typecheck + build
 ```
 
-## État actuel
+## Exercices
 
-- **Calcul mental** : sessions de 20 opérations (+ − × ÷), 10 niveaux.
-- **Mémoire de travail** : empan de chiffres, 12 séquences par session. Les chiffres s'affichent un par un
-  (0,8 s + 0,25 s de pause), puis il faut les restituer dans l'ordre direct (3 à 12 chiffres selon le niveau)
-  ou dans l'ordre inverse (un chiffre de moins, car l'inversion est plus exigeante).
-- **Difficulté adaptative** (tous domaines) : 3 bonnes réponses d'affilée → niveau +1, 2 erreurs d'affilée →
-  niveau −1. Chaque domaine reprend au dernier niveau atteint.
-- **Suivi** : historique des sessions (précision, temps moyen, niveau) stocké en localStorage sur l'appareil.
-- **Points faibles** : stats par catégorie (opération, ou mode direct/inverse) sur les 10 dernières sessions ;
-  la catégorie la moins réussie (au moins 8 réponses) est signalée, le temps servant à départager les ex æquo.
-- **Entraînement ciblé** : les sessions suivantes insistent sur ce point faible (50 % des tirages forcés dessus,
-  le reste uniforme), si le niveau en cours l'utilise.
-- Attention, logique, vitesse : à venir.
+| Domaine | Exercice | Catégories suivies | Chrono |
+| --- | --- | --- | --- |
+| Calcul mental | Opérations + − × ÷, 20 par session | opération | non |
+| Mémoire de travail | Empan de chiffres : restituer dans l'ordre direct (3 → 12 chiffres) ou inverse (un de moins) | mode | non |
+| Attention | Stroop : nommer la couleur de l'encre, pas le mot (touches R B V J) | concordant / discordant | 3 s → 0,9 s |
+| Logique | Suites de nombres : arithmétique, géométrique, alternée, écarts croissants, somme des précédents, entremêlée | type de suite | non |
+| Vitesse de traitement | Deux séries identiques ou non ? (← / →) | identiques / différentes | selon longueur et niveau |
+
+Tous les exercices partagent :
+- **10 niveaux adaptatifs** : 3 bonnes réponses d'affilée → niveau +1, 2 erreurs d'affilée → niveau −1 ;
+  chaque domaine reprend au dernier niveau atteint.
+- **Points faibles** : stats par catégorie sur les 10 dernières sessions ; la catégorie la moins réussie
+  (au moins 8 réponses) est signalée, et les sessions suivantes insistent dessus (50 % des tirages).
+
+## Programmes
+
+- **Séance du jour** (~12 min) : tous les domaines, du plus faible au plus fort ; le plus faible a une série double.
+- **Express** (~5 min) : calcul mental puis les deux autres domaines les plus faibles.
+- **Focus calcul** (~12 min) : calcul, mémoire de travail, calcul.
+
+Le domaine le plus faible = celui dont le niveau est le plus bas par rapport à son échelle (non entraîné en premier).
+L'accueil affiche la **série** de jours consécutifs d'entraînement.
+
+## Réponse vocale
+
+Bouton « 🎤 Réponse vocale » en haut à droite, visible seulement si le navigateur gère la reconnaissance vocale
+(Edge, Chrome ; pas Firefox). Les réponses comprises : nombres (« 42 » ou « quarante-deux »), couleurs,
+« pareil » / « différent », chiffres un par un (« trois huit un »). Sur les exercices chronométrés,
+1,5 s de plus est accordée pour compenser le délai de reconnaissance.
+
+Confidentialité : dans Edge et Chrome, l'audio est envoyé aux serveurs de Microsoft / Google pour la transcription.
+La fonction est désactivée par défaut.
 
 ## Structure
 
 ```
 src/
-  core/        types partagés, difficulté adaptative, stats, points faibles, aléatoire
-  domains/     un dossier par domaine cognitif (logique pure, testée)
+  core/        types, difficulté adaptative, stats, points faibles, programmes, série de jours
+  domains/     un dossier par domaine : moteur pur et testé (génération, niveaux, libellés)
   storage/     persistance (interface + implémentation localStorage)
-  ui/          composants React ; ui/domains.ts décrit chaque domaine pour l'affichage
+  voice/       reconnaissance vocale (Web Speech API) et interprétation des réponses en français
+  ui/          composants React ; useAdaptiveSession = moteur de session commun ; domains.ts = registre des domaines
 ```
 
-Chaque domaine produit des `SessionRecord` communs, avec un détail par catégorie. Ajouter un domaine revient à :
-un moteur dans `domains/<nom>/`, un composant de session dans `ui/`, une entrée dans `ui/domains.ts` et un cas dans `App.tsx`.
+Ajouter un exercice : un moteur dans `domains/<nom>/`, un composant de session qui utilise `useAdaptiveSession`,
+et une entrée dans `ui/domains.ts`.
 
 ## Dette technique connue
 
 - Stockage localStorage seulement, sans export ni sauvegarde.
-- Pas de graphique de progression, seulement un tableau.
-- Le ciblage ne vise qu'une opération à la fois, avec une part fixe (pas encore proportionnelle à l'écart).
+- Pas de graphique de progression, seulement des tableaux.
+- Les temps de réponse à la voix incluent le délai de reconnaissance et sont mélangés à ceux au clavier.
+- Le ciblage ne vise qu'une catégorie à la fois, avec une part fixe.
+- Un exercice par domaine ; la batterie peut s'étoffer (n-back, rotation mentale, calcul en chaîne…).

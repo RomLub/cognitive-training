@@ -4,6 +4,9 @@ import App from './App'
 import type { SessionRecord } from './core/types'
 import { SESSION_LENGTH as CALC_SESSION_LENGTH } from './domains/calculation/session'
 import { SESSION_LENGTH as MEMORY_SESSION_LENGTH } from './domains/memory/span'
+import { SESSION_LENGTH as ATTENTION_SESSION_LENGTH } from './domains/attention/stroop'
+import { SESSION_LENGTH as LOGIC_SESSION_LENGTH } from './domains/logic/series'
+import { SESSION_LENGTH as SPEED_SESSION_LENGTH } from './domains/speed/compare'
 import type { SessionRepository } from './storage/sessionRepository'
 
 class MemoryRepository implements SessionRepository {
@@ -35,6 +38,50 @@ function solveDisplayedProblem(): number {
     case '×': return a * b
     default: return a / b
   }
+}
+
+/** Advances fake time until the answer field appears, recording each digit as it is flashed. */
+function watchSequence(): number[] {
+  const seen: number[] = []
+  let previous = ''
+  for (let t = 0; t < 60_000 && screen.queryByLabelText('Réponse') === null; t += 50) {
+    act(() => vi.advanceTimersByTime(50))
+    const text = screen.queryByTestId('digit')?.textContent?.trim() ?? ''
+    if (/^\d$/.test(text) && text !== previous) seen.push(Number(text))
+    previous = text
+  }
+  return seen
+}
+
+const INK_TO_NAME: Record<string, string> = { red: 'Rouge', blue: 'Bleu', green: 'Vert', yellow: 'Jaune' }
+
+function inkOnScreen(): string {
+  return [...document.querySelector('.stroop-word')!.classList].find((c) => c.startsWith('ink-'))!.slice(4)
+}
+
+/** Answers the item on screen correctly, whatever the exercise (logic excepted: it answers 0). */
+function answerCurrentItem() {
+  if (document.querySelector('.span-mode') !== null) {
+    const backward = document.querySelector('.span-mode')!.classList.contains('backward')
+    const digits = watchSequence()
+    const input = screen.getByLabelText('Réponse')
+    fireEvent.change(input, { target: { value: (backward ? digits.toReversed() : digits).join('') } })
+    fireEvent.submit(input.closest('form')!)
+    return
+  }
+  if (document.querySelector('.stroop-word') !== null) {
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${INK_TO_NAME[inkOnScreen()]}`) }))
+    return
+  }
+  if (document.querySelector('.pair') !== null) {
+    const same = screen.getByTestId('pair-left').textContent === screen.getByTestId('pair-right').textContent
+    fireEvent.click(screen.getByRole('button', { name: same ? /^Identiques/ : /^Différents/ }))
+    return
+  }
+  const input = screen.getByLabelText('Réponse')
+  const value = document.querySelector('.series') !== null ? 0 : solveDisplayedProblem()
+  fireEvent.change(input, { target: { value: String(value) } })
+  fireEvent.submit(input.closest('form')!)
 }
 
 function weakCalcRecord(): SessionRecord {
@@ -124,19 +171,6 @@ describe('App working memory flow', () => {
     vi.useRealTimers()
   })
 
-  /** Advances time until the answer field appears, recording each digit as it is flashed. */
-  function watchSequence(): number[] {
-    const seen: number[] = []
-    let previous = ''
-    for (let t = 0; t < 60_000 && screen.queryByLabelText('Réponse') === null; t += 50) {
-      act(() => vi.advanceTimersByTime(50))
-      const text = screen.queryByTestId('digit')?.textContent?.trim() ?? ''
-      if (/^\d$/.test(text) && text !== previous) seen.push(Number(text))
-      previous = text
-    }
-    return seen
-  }
-
   it('flashes digits, checks recall in the right order, saves and shows results', () => {
     vi.useFakeTimers()
     const repo = new MemoryRepository()
@@ -194,5 +228,198 @@ describe('App working memory flow', () => {
     render(<App repository={repo} />)
     clickInCard('Mémoire de travail', 'Progrès')
     expect(screen.getByText('Aucune session pour l\'instant.')).toBeTruthy()
+  })
+})
+
+describe('App attention, logic and speed', () => {
+  afterEach(() => {
+    cleanup()
+    vi.useRealTimers()
+  })
+
+  it('attention: naming the ink color is correct, a full session is saved', () => {
+    const repo = new MemoryRepository()
+    render(<App repository={repo} />)
+    clickInCard('Attention', 'Commencer')
+    expect(screen.getByText('Donne la couleur de l’encre, pas le mot.')).toBeTruthy()
+    for (let i = 0; i < ATTENTION_SESSION_LENGTH; i++) answerCurrentItem()
+    expect(screen.getByText(/Session terminée — Attention/)).toBeTruthy()
+    expect(repo.records[0]!.correct).toBe(ATTENTION_SESSION_LENGTH)
+  })
+
+  it('attention: answering the word instead of the ink is wrong', () => {
+    render(<App repository={new MemoryRepository()} />)
+    clickInCard('Attention', 'Commencer')
+    // Find an incongruent trial (word ≠ ink) and answer the word.
+    for (let guard = 0; guard < 50; guard++) {
+      const word = document.querySelector('.stroop-word')!.textContent!.toLowerCase()
+      if (word !== INK_TO_NAME[inkOnScreen()]!.toLowerCase()) {
+        fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${word.charAt(0).toUpperCase()}${word.slice(1)}`) }))
+        expect(screen.getByText(/✗ L’encre était/)).toBeTruthy()
+        return
+      }
+      answerCurrentItem()
+    }
+    throw new Error('No incongruent trial in 50 items')
+  })
+
+  it('attention: keyboard shortcuts answer', () => {
+    render(<App repository={new MemoryRepository()} />)
+    clickInCard('Attention', 'Commencer')
+    const key = ({ red: 'r', blue: 'b', green: 'v', yellow: 'j' } as Record<string, string>)[inkOnScreen()]!
+    fireEvent.keyDown(window, { key })
+    expect(screen.getByText(/^✓/)).toBeTruthy()
+  })
+
+  it('attention: the deadline counts a missing answer as an error', () => {
+    vi.useFakeTimers()
+    render(<App repository={new MemoryRepository()} />)
+    clickInCard('Attention', 'Commencer')
+    expect(screen.getByText('Essai 1/24')).toBeTruthy()
+    act(() => vi.advanceTimersByTime(3100))
+    expect(screen.getByText(/✗ Trop lent/)).toBeTruthy()
+    expect(screen.getByText('Essai 2/24')).toBeTruthy()
+  })
+
+  it('logic: shows the series, explains the rule after answering, saves the session', () => {
+    const repo = new MemoryRepository()
+    render(<App repository={repo} />)
+    clickInCard('Logique', 'Commencer')
+    expect(document.querySelector('.series')!.textContent).toMatch(/^(\d+, )+\?$/)
+    answerCurrentItem()
+    expect(screen.getByText(/[✓✗] \d+ — /)).toBeTruthy()
+    for (let i = 1; i < LOGIC_SESSION_LENGTH; i++) answerCurrentItem()
+    expect(screen.getByText(/Session terminée — Logique/)).toBeTruthy()
+    expect(repo.records[0]!.items).toBe(LOGIC_SESSION_LENGTH)
+  })
+
+  it('speed: judging pairs correctly, with arrow keys too', () => {
+    const repo = new MemoryRepository()
+    render(<App repository={repo} />)
+    clickInCard('Vitesse de traitement', 'Commencer')
+    const same = screen.getByTestId('pair-left').textContent === screen.getByTestId('pair-right').textContent
+    fireEvent.keyDown(window, { key: same ? 'ArrowLeft' : 'ArrowRight' })
+    for (let i = 1; i < SPEED_SESSION_LENGTH; i++) answerCurrentItem()
+    expect(screen.getByText(/Session terminée — Vitesse de traitement/)).toBeTruthy()
+    expect(repo.records[0]!.correct).toBe(SPEED_SESSION_LENGTH)
+  })
+})
+
+describe('App programs and streak', () => {
+  afterEach(() => {
+    cleanup()
+    vi.useRealTimers()
+  })
+
+  it('runs the Express program step by step and shows a summary', () => {
+    vi.useFakeTimers()
+    const repo = new MemoryRepository()
+    render(<App repository={repo} />)
+    const card = screen.getByRole('article', { name: 'Express' })
+    // No history: calculation first, then the first untrained domains.
+    expect(within(card).getByText('Calcul mental → Mémoire de travail → Attention')).toBeTruthy()
+    fireEvent.click(within(card).getByRole('button', { name: 'Démarrer' }))
+
+    expect(screen.getByText(/Étape 1\/3/)).toBeTruthy()
+    for (let step = 0; step < 3; step++) {
+      fireEvent.click(screen.getByRole('button', { name: step === 0 ? 'Commencer' : 'Continuer' }))
+      for (let guard = 0; guard < 100 && document.querySelector('.session') !== null; guard++) answerCurrentItem()
+    }
+
+    expect(screen.getByText('Programme terminé — Express')).toBeTruthy()
+    expect(repo.records.map((r) => r.domain)).toEqual(['calculation', 'memory', 'attention'])
+    expect(repo.records.map((r) => r.items)).toEqual([10, 6, 12])
+    fireEvent.click(screen.getByRole('button', { name: 'Accueil' }))
+    expect(screen.getByText(/Série : 1 jour · 3 sessions aujourd’hui/)).toBeTruthy()
+  })
+
+  it('can stop a program between steps', () => {
+    render(<App repository={new MemoryRepository()} />)
+    fireEvent.click(within(screen.getByRole('article', { name: 'Séance du jour' })).getByRole('button', { name: 'Démarrer' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Arrêter le programme' }))
+    expect(screen.getByText('Programmes')).toBeTruthy()
+  })
+})
+
+/** Fake Web Speech API: records instances so tests can emit transcripts. */
+class FakeRecognition {
+  static instances: FakeRecognition[] = []
+  lang = ''
+  continuous = false
+  interimResults = false
+  maxAlternatives = 1
+  onresult: ((event: unknown) => void) | null = null
+  onerror: ((event: unknown) => void) | null = null
+  onstart: (() => void) | null = null
+  onend: (() => void) | null = null
+  aborted = false
+  start() {
+    FakeRecognition.instances.push(this)
+    this.onstart?.()
+  }
+  abort() {
+    this.aborted = true
+  }
+  say(...alternatives: string[]) {
+    const result = Object.assign(alternatives.map((transcript) => ({ transcript })), { isFinal: true })
+    act(() => this.onresult?.({ resultIndex: 0, results: { length: 1, 0: result } }))
+  }
+}
+
+function activeRecognition(): FakeRecognition {
+  const live = FakeRecognition.instances.filter((r) => !r.aborted)
+  if (live.length !== 1) throw new Error(`Expected one live recognizer, found ${live.length}`)
+  return live[0]!
+}
+
+describe('App voice answers', () => {
+  afterEach(() => {
+    cleanup()
+    vi.unstubAllGlobals()
+    FakeRecognition.instances = []
+    localStorage.clear()
+  })
+
+  it('hides the voice toggle when the browser has no speech recognition', () => {
+    render(<App repository={new MemoryRepository()} />)
+    expect(screen.queryByRole('button', { name: /Réponse vocale/ })).toBeNull()
+  })
+
+  it('answers calculation by voice and remembers the setting', () => {
+    vi.stubGlobal('SpeechRecognition', FakeRecognition)
+    render(<App repository={new MemoryRepository()} />)
+    fireEvent.click(screen.getByRole('button', { name: /Réponse vocale : désactivée/ }))
+    expect(localStorage.getItem('cognitive-training:voice')).toBe('on')
+
+    clickInCard('Calcul mental', 'Commencer')
+    const recognition = activeRecognition()
+    expect(recognition.lang).toBe('fr-FR')
+    expect(screen.getByText(/À l’écoute/)).toBeTruthy()
+
+    recognition.say('bonjour', String(solveDisplayedProblem()))
+    expect(screen.getByText(/^✓/)).toBeTruthy()
+    expect(screen.getByText('Question 2/20')).toBeTruthy()
+
+    recognition.say('je ne sais pas')
+    expect(screen.getByText(/Pas compris : « je ne sais pas »/)).toBeTruthy()
+    expect(screen.getByText('Question 2/20')).toBeTruthy()
+  })
+
+  it('answers the Stroop task by saying the color', () => {
+    vi.stubGlobal('SpeechRecognition', FakeRecognition)
+    localStorage.setItem('cognitive-training:voice', 'on')
+    render(<App repository={new MemoryRepository()} />)
+    clickInCard('Attention', 'Commencer')
+    activeRecognition().say(INK_TO_NAME[inkOnScreen()]!.toLowerCase())
+    expect(screen.getByText(/^✓/)).toBeTruthy()
+  })
+
+  it('reports a refused microphone', () => {
+    vi.stubGlobal('SpeechRecognition', FakeRecognition)
+    localStorage.setItem('cognitive-training:voice', 'on')
+    render(<App repository={new MemoryRepository()} />)
+    clickInCard('Calcul mental', 'Commencer')
+    act(() => activeRecognition().onerror?.({ error: 'not-allowed' }))
+    expect(screen.getByText(/Accès au micro refusé/)).toBeTruthy()
   })
 })

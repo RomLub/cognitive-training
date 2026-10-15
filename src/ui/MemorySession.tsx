@@ -1,45 +1,25 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { initialAdaptiveState, updateAdaptive } from '../core/adaptive'
-import { buildSessionRecord } from '../core/session'
-import type { ItemResult, SessionRecord } from '../core/types'
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { SPAN_MODE_LABELS } from '../domains/memory/labels'
-import {
-  DIGIT_MS,
-  GAP_MS,
-  generateTrial,
-  LEVEL_BOUNDS,
-  normalizeSpanAnswer,
-  SESSION_LENGTH,
-  type SpanMode,
-  type SpanTrial,
-} from '../domains/memory/span'
+import { DIGIT_MS, GAP_MS, generateTrial, LEVEL_BOUNDS, normalizeSpanAnswer, type SpanMode } from '../domains/memory/span'
+import { parseDigitSequence } from '../voice/parse'
+import { SessionFrame, type ExerciseProps } from './SessionFrame'
+import { useVoiceAnswer } from './useVoiceAnswer'
+import { VoiceStatus } from './VoiceStatus'
+import { useAdaptiveSession } from './useAdaptiveSession'
 
 /** Pause before the first digit so the user can read the instruction. */
 export const LEAD_MS = 1000
 
-interface Props {
-  startLevel: number
-  /** Weak mode to practise more, or null for an even mix. */
-  focus: SpanMode | null
-  onFinish: (record: SessionRecord) => void
-  onQuit: () => void
-}
-
-interface Feedback {
-  correct: boolean
-  text: string
-}
-
-export function MemorySession({ startLevel, focus, onFinish, onQuit }: Props) {
-  const [adaptive, setAdaptive] = useState(() => initialAdaptiveState(startLevel, LEVEL_BOUNDS))
-  const [trial, setTrial] = useState<SpanTrial>(() => generateTrial(adaptive.level, Math.random, focus))
+export function MemorySession({ startLevel, focus, length, voice, onFinish, onQuit }: ExerciseProps<SpanMode>) {
+  const generate = useCallback((level: number) => {
+    const t = generateTrial(level, Math.random, focus)
+    return { ...t, category: t.mode }
+  }, [focus])
+  const session = useAdaptiveSession({ domain: 'memory', bounds: LEVEL_BOUNDS, length, startLevel, generate, onFinish })
+  const { item: trial, restartTimer } = session
   const [visibleDigit, setVisibleDigit] = useState<number | null>(null)
   const [answering, setAnswering] = useState(false)
   const [input, setInput] = useState('')
-  const [results, setResults] = useState<ItemResult[]>([])
-  const [feedback, setFeedback] = useState<Feedback | null>(null)
-  const [startedAt] = useState(() => new Date())
-  const answerShownAt = useRef(0)
 
   // Plays the sequence one digit at a time, then opens the answer field.
   useEffect(() => {
@@ -50,66 +30,39 @@ export function MemorySession({ startLevel, focus, onFinish, onQuit }: Props) {
     ])
     timers.push(
       setTimeout(() => {
-        answerShownAt.current = performance.now()
+        restartTimer()
         setAnswering(true)
       }, LEAD_MS + trial.digits.length * step),
     )
     return () => timers.forEach(clearTimeout)
-  }, [trial])
+  }, [trial, restartTimer])
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-    const answer = normalizeSpanAnswer(input)
-    if (answer === null) return
-
-    const correct = answer === trial.answer
-    const result: ItemResult = {
-      level: trial.level,
-      category: trial.mode,
-      correct,
-      responseMs: Math.round(performance.now() - answerShownAt.current),
-    }
-    const nextResults = [...results, result]
-    const nextAdaptive = updateAdaptive(adaptive, correct, LEVEL_BOUNDS)
-
-    if (nextResults.length >= SESSION_LENGTH) {
-      onFinish(
-        buildSessionRecord({
-          id: crypto.randomUUID(),
-          domain: 'memory',
-          startedAt,
-          startLevel: initialAdaptiveState(startLevel, LEVEL_BOUNDS).level,
-          endLevel: nextAdaptive.level,
-          results: nextResults,
-        }),
-      )
-      return
-    }
-
-    setFeedback({ correct, text: `Attendu : ${trial.answer.split('').join(' ')}` })
-    setResults(nextResults)
-    setAdaptive(nextAdaptive)
-    setTrial(generateTrial(nextAdaptive.level, Math.random, focus))
+  function submit(answer: string) {
+    session.answer(answer === trial.answer, `Attendu : ${trial.answer.split('').join(' ')}`)
     setAnswering(false)
     setVisibleDigit(null)
     setInput('')
   }
 
+  const voiceState = useVoiceAnswer({ enabled: voice && answering, parse: parseDigitSequence, onAnswer: submit })
+
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault()
+    const answer = normalizeSpanAnswer(input)
+    if (answer !== null) submit(answer)
+  }
+
   return (
-    <section className="session">
-      <header className="session-header">
-        <span>
-          Séquence {results.length + 1}/{SESSION_LENGTH}
-        </span>
-        <span>Niveau {adaptive.level}</span>
-        {focus !== null && <span className="focus">Focus : {SPAN_MODE_LABELS[focus]}</span>}
-        <button type="button" className="link" onClick={onQuit}>
-          Abandonner
-        </button>
-      </header>
-
-      <progress max={SESSION_LENGTH} value={results.length} />
-
+    <SessionFrame
+      itemLabel="Séquence"
+      index={session.index}
+      length={length}
+      level={session.level}
+      focusLabel={focus === null ? null : SPAN_MODE_LABELS[focus]}
+      feedback={session.feedback}
+      onQuit={onQuit}
+      status={<VoiceStatus state={voiceState} />}
+    >
       <p className={`span-mode ${trial.mode}`}>
         {SPAN_MODE_LABELS[trial.mode]} · {trial.digits.length} chiffres
       </p>
@@ -134,10 +87,6 @@ export function MemorySession({ startLevel, focus, onFinish, onQuit }: Props) {
           {visibleDigit ?? ' '}
         </p>
       )}
-
-      <p className={`feedback ${feedback === null ? '' : feedback.correct ? 'ok' : 'ko'}`}>
-        {feedback === null ? ' ' : `${feedback.correct ? '✓' : '✗'} ${feedback.text}`}
-      </p>
-    </section>
+    </SessionFrame>
   )
 }
