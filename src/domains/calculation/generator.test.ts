@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { seededRng } from '../../core/random'
-import { formatProblem, generateProblem } from './generator'
+import { FOCUS_SHARE, formatProblem, generateProblem } from './generator'
 import { getLevelSpec, MAX_LEVEL, MIN_LEVEL } from './levels'
 
 const SAMPLES = 500
@@ -47,5 +47,31 @@ describe('generateProblem', () => {
 
   it('formats problems', () => {
     expect(formatProblem({ a: 12, b: 3, operator: '÷', answer: 4, level: 5 })).toBe('12 ÷ 3')
+  })
+
+  describe('focus on a weak operator', () => {
+    const N = 4000
+    const share = (level: number, focus: '+' | '-' | '×' | '÷' | null, op: string) => {
+      const rng = seededRng(7)
+      let hits = 0
+      for (let i = 0; i < N; i++) if (generateProblem(level, rng, focus).operator === op) hits++
+      return hits / N
+    }
+
+    it('over-represents the focus operator', () => {
+      // Level 5 has 4 operators: uniform share 25 %, focused share = FOCUS_SHARE + (1 - FOCUS_SHARE) / 4.
+      const expected = FOCUS_SHARE + (1 - FOCUS_SHARE) / 4
+      expect(share(5, '÷', '÷')).toBeCloseTo(expected, 1)
+      expect(share(5, null, '÷')).toBeCloseTo(0.25, 1)
+    })
+
+    it('still produces the other operators', () => {
+      for (const op of ['+', '-', '×']) expect(share(5, '÷', op)).toBeGreaterThan(0.08)
+    })
+
+    it('ignores a focus the level does not use', () => {
+      expect(share(2, '÷', '÷')).toBe(0)
+      expect(share(2, '÷', '+')).toBeCloseTo(0.5, 1)
+    })
   })
 })

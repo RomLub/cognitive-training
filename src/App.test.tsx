@@ -71,6 +71,27 @@ describe('App calculation flow', () => {
     expect(screen.getByText(/Point faible : Division — 50 %/)).toBeTruthy()
   })
 
+  it('focuses the next session on the weakest operation', () => {
+    const repo = new MemoryRepository()
+    repo.records.push({
+      id: 'prev', domain: 'calculation', startedAt: '2026-10-14T10:00:00.000Z',
+      startLevel: 5, endLevel: 5, items: 20, correct: 15, avgResponseMs: 3000,
+      breakdown: {
+        '+': { items: 10, correct: 10, totalResponseMs: 20000 },
+        '÷': { items: 10, correct: 5, totalResponseMs: 40000 },
+      },
+    })
+    render(<App repository={repo} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Commencer' }))
+    expect(screen.getByText('Focus : Division')).toBeTruthy()
+  })
+
+  it('shows no focus without a weak point', () => {
+    render(<App repository={new MemoryRepository()} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Commencer' }))
+    expect(screen.queryByText(/Focus :/)).toBeNull()
+  })
+
   it('resumes at the last reached level', () => {
     const repo = new MemoryRepository()
     repo.records.push({

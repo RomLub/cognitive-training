@@ -10,10 +10,16 @@ export interface Problem {
   level: number
 }
 
-export function generateProblem(level: number, rng: Rng = Math.random): Problem {
+/** Share of draws forced onto the focus operator; the rest stay uniform (focus included). */
+export const FOCUS_SHARE = 0.5
+
+/**
+ * @param focus operator to practise more (the user's weak point). Ignored when the level doesn't use it.
+ */
+export function generateProblem(level: number, rng: Rng = Math.random, focus: Operator | null = null): Problem {
   const spec = getLevelSpec(level)
   const operators = (Object.keys(spec) as Operator[]).filter((op) => spec[op] !== undefined)
-  const operator = pick(rng, operators)
+  const operator = focus !== null && operators.includes(focus) && rng() < FOCUS_SHARE ? focus : pick(rng, operators)
 
   switch (operator) {
     case '+': {

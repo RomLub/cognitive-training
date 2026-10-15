@@ -18,6 +18,8 @@ npm run build   # typecheck + build
 - **Suivi** : historique des sessions (précision, temps moyen, niveau) stocké en localStorage sur l'appareil.
 - **Points faibles** : stats par opération sur les 10 dernières sessions ; l'opération la moins réussie
   (au moins 8 réponses) est signalée, le temps servant à départager les ex æquo.
+- **Entraînement ciblé** : les sessions suivantes insistent sur ce point faible (50 % des tirages forcés dessus,
+  le reste uniforme), si le niveau en cours utilise cette opération.
 - Mémoire, attention, logique, vitesse : à venir.
 
 ## Structure
@@ -36,4 +38,4 @@ Chaque domaine produit des `SessionRecord` communs : c'est ce qui permettra de c
 
 - Stockage localStorage seulement, sans export ni sauvegarde.
 - Pas de graphique de progression, seulement un tableau.
-- Les points faibles sont seulement affichés : la génération des exercices ne les cible pas encore.
+- Le ciblage ne vise qu'une opération à la fois, avec une part fixe (pas encore proportionnelle à l'écart).

@@ -251,3 +251,8 @@ tr.weak td {
   color: var(--ko);
   font-weight: 600;
 }
+
+.session-header .focus {
+  color: var(--ko);
+  font-weight: 600;
+}

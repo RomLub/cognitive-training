@@ -2,10 +2,14 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { ItemResult, SessionRecord } from '../core/types'
 import { initialAdaptiveState, updateAdaptive } from '../domains/calculation/adaptive'
 import { formatProblem, generateProblem, type Problem } from '../domains/calculation/generator'
+import { OPERATOR_LABELS } from '../domains/calculation/labels'
+import type { Operator } from '../domains/calculation/levels'
 import { buildSessionRecord, parseAnswer, SESSION_LENGTH } from '../domains/calculation/session'
 
 interface Props {
   startLevel: number
+  /** Weak operator to practise more, or null for a uniform mix. */
+  focus: Operator | null
   onFinish: (record: SessionRecord) => void
   onQuit: () => void
 }
@@ -15,9 +19,9 @@ interface Feedback {
   text: string
 }
 
-export function CalculationSession({ startLevel, onFinish, onQuit }: Props) {
+export function CalculationSession({ startLevel, focus, onFinish, onQuit }: Props) {
   const [adaptive, setAdaptive] = useState(() => initialAdaptiveState(startLevel))
-  const [problem, setProblem] = useState<Problem>(() => generateProblem(adaptive.level))
+  const [problem, setProblem] = useState<Problem>(() => generateProblem(adaptive.level, Math.random, focus))
   const [input, setInput] = useState('')
   const [results, setResults] = useState<ItemResult[]>([])
   const [feedback, setFeedback] = useState<Feedback | null>(null)
@@ -60,7 +64,7 @@ export function CalculationSession({ startLevel, onFinish, onQuit }: Props) {
     setFeedback({ correct, text: `${formatProblem(problem)} = ${problem.answer}` })
     setResults(nextResults)
     setAdaptive(nextAdaptive)
-    setProblem(generateProblem(nextAdaptive.level))
+    setProblem(generateProblem(nextAdaptive.level, Math.random, focus))
     setInput('')
   }
 
@@ -71,6 +75,7 @@ export function CalculationSession({ startLevel, onFinish, onQuit }: Props) {
           Question {results.length + 1}/{SESSION_LENGTH}
         </span>
         <span>Niveau {adaptive.level}</span>
+        {focus !== null && <span className="focus">Focus : {OPERATOR_LABELS[focus]}</span>}
         <button type="button" className="link" onClick={onQuit}>
           Abandonner
         </button>

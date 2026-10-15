@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { domainProgress } from './core/stats'
 import type { SessionRecord } from './core/types'
-import { MIN_LEVEL } from './domains/calculation/levels'
+import { analyzeOperators } from './domains/calculation/focus'
+import { MIN_LEVEL, type Operator } from './domains/calculation/levels'
 import { LocalStorageSessionRepository, type SessionRepository } from './storage/sessionRepository'
 import { CalculationSession } from './ui/CalculationSession'
 import { Home } from './ui/Home'
@@ -10,7 +11,7 @@ import { Results } from './ui/Results'
 
 type Screen =
   | { name: 'home' }
-  | { name: 'calculation'; startLevel: number; key: number }
+  | { name: 'calculation'; startLevel: number; focus: Operator | null; key: number }
   | { name: 'results'; record: SessionRecord }
   | { name: 'progress' }
 
@@ -30,7 +31,8 @@ export default function App({ repository }: { repository?: SessionRepository }) 
 
   function startCalculation() {
     const startLevel = domainProgress('calculation', records).currentLevel ?? MIN_LEVEL
-    setScreen({ name: 'calculation', startLevel, key: Date.now() })
+    const focus = analyzeOperators(records).weakest?.category ?? null
+    setScreen({ name: 'calculation', startLevel, focus, key: Date.now() })
   }
 
   function finishSession(record: SessionRecord) {
@@ -66,7 +68,7 @@ export default function App({ repository }: { repository?: SessionRepository }) 
         <Home records={records} onStartCalculation={startCalculation} onShowProgress={() => setScreen({ name: 'progress' })} />
       )}
       {screen.name === 'calculation' && (
-        <CalculationSession key={screen.key} startLevel={screen.startLevel} onFinish={finishSession} onQuit={home} />
+        <CalculationSession key={screen.key} startLevel={screen.startLevel} focus={screen.focus} onFinish={finishSession} onQuit={home} />
       )}
       {screen.name === 'results' && <Results record={screen.record} onRestart={startCalculation} onHome={home} />}
       {screen.name === 'progress' && <Progress records={records} onBack={home} />}

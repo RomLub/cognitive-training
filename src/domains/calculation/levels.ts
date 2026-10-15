@@ -1,5 +1,9 @@
 export type Operator = '+' | '-' | '×' | '÷'
 
+export function isOperator(value: string): value is Operator {
+  return value === '+' || value === '-' || value === '×' || value === '÷'
+}
+
 type Range = readonly [min: number, max: number]
 
 /**
