@@ -989,3 +989,151 @@ kbd {
 .domain-card .actions button {
   padding: 6px 12px;
 }
+
+/* ---------- Touch & mobile ---------- */
+
+/* No double-tap zoom delay on buttons; no accidental text selection on stimuli. */
+button {
+  touch-action: manipulation;
+}
+
+.problem,
+.stroop-word,
+.pair,
+.nback-grid,
+.corsi-board,
+.trail-board,
+.matrix-grid,
+.rotation-pair,
+.tower {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Keyboard shortcuts mean nothing on a touch screen. */
+@media (hover: none) {
+  kbd {
+    display: none;
+  }
+}
+
+/* Notch / home indicator when installed full screen. */
+.app {
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-bottom: max(48px, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 600px) {
+  .app {
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+
+  .app-header {
+    margin-bottom: 12px;
+  }
+
+  .app-header h1 {
+    font-size: 1.1rem;
+  }
+
+  .voice-toggle,
+  button.brand {
+    min-height: 40px;
+  }
+
+  /* Session header: counter and level on one line, quit button easy to hit. */
+  .session-header {
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+    row-gap: 0;
+  }
+
+  .session-header .link {
+    min-height: 44px;
+    padding: 0 4px;
+  }
+
+  .problem {
+    margin: 20px 0 16px;
+  }
+
+  .instruction {
+    font-size: 0.95rem;
+  }
+
+  /* Big thumb-friendly answer buttons. */
+  .choice-grid button {
+    min-height: 52px;
+    font-size: 1.05rem;
+  }
+
+  .answer-form button {
+    min-height: 48px;
+  }
+
+  button.link {
+    min-height: 40px;
+  }
+
+  /* Symbol-digit: a phone keypad instead of one row of nine. */
+  .digit-pad {
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 300px;
+    gap: 8px;
+  }
+
+  .digit-pad button {
+    min-height: 52px;
+    font-size: 1.3rem;
+  }
+
+  .trail-node {
+    width: 42px;
+    height: 42px;
+  }
+
+  .tower-slot {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Home: compact exercise rows (title and level on the left, actions on the right). */
+  .domain-grid {
+    gap: 8px;
+  }
+
+  .domain-card {
+    padding: 12px;
+  }
+
+  .domain-section .domain-card {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    column-gap: 8px;
+  }
+
+  .domain-section .domain-card h4 {
+    margin: 0;
+  }
+
+  .domain-section .domain-card p {
+    grid-column: 1;
+    margin: 2px 0 0;
+    font-size: 0.85rem;
+  }
+
+  .domain-section .domain-card .actions {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .domain-section .domain-card .actions button {
+    min-height: 40px;
+    padding: 6px 12px;
+  }
+}

@@ -11,6 +11,20 @@ npm test        # tests (Vitest)
 npm run build   # typecheck + build
 ```
 
+## Sur téléphone
+
+L'interface s'adapte au mobile (boutons au pouce, pavé numérique, raccourcis clavier masqués sur écran tactile)
+et l'app est une **PWA** : installable sur l'écran d'accueil, plein écran, utilisable hors ligne une fois chargée.
+
+- **Test rapide sur le Wi-Fi** : `npm run dev:mobile`, puis sur le téléphone `http://<IP du PC>:5173`
+  (le PC et le téléphone sur le même réseau ; Windows peut demander d'autoriser Node dans le pare-feu, et un VPN
+  peut bloquer l'accès au réseau local). Limites : pas d'installation ni de micro, car ces fonctions exigent HTTPS.
+- **Usage quotidien** : publier le build (`npm run build`, dossier `dist/`) sur un hébergement HTTPS ; l'app est
+  alors installable et la réponse vocale fonctionne (Chrome Android, Safari iOS).
+
+Les données restent dans le navigateur de chaque appareil : l'historique du téléphone est distinct de celui du PC.
+Les icônes se régénèrent avec `python scripts/generate_icons.py` (Pillow).
+
 ## Exercices
 
 | Domaine | Exercice | Principe | Catégories suivies |

@@ -9,7 +9,9 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "dev:mobile": "vite --host",
+    "preview:mobile": "vite build && vite preview --host"
   },
   "dependencies": {
     "react": "^19.2.8",
