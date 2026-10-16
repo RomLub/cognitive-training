@@ -20,6 +20,8 @@ class MemoryRepository implements SessionRepository {
 }
 
 class FakeAuth implements AuthApi {
+  googleEnabled = false
+  googleCalls = 0
   user: CloudUser | null = null
   listeners = new Set<(u: CloudUser | null) => void>()
   accounts = new Map<string, string>()
@@ -44,6 +46,11 @@ class FakeAuth implements AuthApi {
   }
   async signOut() {
     this.set(null)
+  }
+  async signInWithGoogle() {
+    this.googleCalls++
+    // Real flow: redirect to Google, then back to the app signed in.
+    this.set({ id: 'u-google', email: 'moi@gmail.com' })
   }
 }
 
@@ -169,5 +176,21 @@ describe('shared history', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Se déconnecter' }))
     expect(await screen.findByLabelText('E-mail')).toBeTruthy()
     expect(repo.records).toHaveLength(1)
+  })
+
+  it('hides Google sign-in until the provider is configured', () => {
+    setup()
+    fireEvent.click(screen.getByRole('button', { name: /Se connecter/ }))
+    expect(screen.queryByRole('button', { name: 'Continuer avec Google' })).toBeNull()
+  })
+
+  it('signs in with Google when configured', async () => {
+    const auth = new FakeAuth()
+    auth.googleEnabled = true
+    render(<App repository={new MemoryRepository()} cloud={{ auth, remote: new FakeRemote() }} />)
+    fireEvent.click(screen.getByRole('button', { name: /Se connecter/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Continuer avec Google' }))
+    expect(await screen.findByText('moi@gmail.com')).toBeTruthy()
+    expect(auth.googleCalls).toBe(1)
   })
 })

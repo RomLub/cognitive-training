@@ -18,6 +18,10 @@ export interface AuthApi {
   /** `needsConfirmation`: the account exists but the e-mail link must be clicked before signing in. */
   signUp(email: string, password: string): Promise<{ needsConfirmation: boolean }>
   signOut(): Promise<void>
+  /** True when the Google provider is configured for this deployment. */
+  readonly googleEnabled: boolean
+  /** Leaves the page for Google's consent screen; the app reloads signed in. */
+  signInWithGoogle(): Promise<void>
 }
 
 export interface RemoteSessionStore {

@@ -62,6 +62,19 @@ export function AccountPanel({ auth, sync, onBack }: Props) {
             Connecte-toi avec le même compte sur chaque appareil (PC, téléphone) : ton historique, tes niveaux et tes
             points faibles sont partagés. Sans connexion, l’app fonctionne comme avant, sur cet appareil seulement.
           </p>
+          {auth.googleEnabled && (
+            <>
+              <button
+                type="button"
+                className="secondary google-button"
+                disabled={busy}
+                onClick={() => void run(async () => (await auth.signInWithGoogle(), null))}
+              >
+                Continuer avec Google
+              </button>
+              <p className="muted small or-separator">ou avec un e-mail et un mot de passe</p>
+            </>
+          )}
           <form className="account-form" onSubmit={signIn}>
             <label>
               E-mail

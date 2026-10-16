@@ -1187,3 +1187,14 @@ button {
 .ko {
   color: var(--ko);
 }
+
+.google-button {
+  width: 100%;
+  max-width: 360px;
+  min-height: 44px;
+  margin-top: 8px;
+}
+
+.or-separator {
+  margin: 12px 0 0;
+}

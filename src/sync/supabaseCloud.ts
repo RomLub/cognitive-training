@@ -45,11 +45,23 @@ function toCloudUser(user: User | null | undefined): CloudUser | null {
   return user == null ? null : { id: user.id, email: user.email ?? null }
 }
 
+/** Where the app lives (GitHub Pages sub-folder or localhost); must be in the auth redirect allow list. */
+function appUrl(): string {
+  return `${window.location.origin}${window.location.pathname}`
+}
+
 class SupabaseAuth implements AuthApi {
   private readonly client: SupabaseClient
+  readonly googleEnabled: boolean
 
-  constructor(client: SupabaseClient) {
+  constructor(client: SupabaseClient, googleEnabled: boolean) {
     this.client = client
+    this.googleEnabled = googleEnabled
+  }
+
+  async signInWithGoogle(): Promise<void> {
+    const { error } = await this.client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: appUrl() } })
+    if (error !== null) throw authError(error)
   }
 
   async currentUser(): Promise<CloudUser | null> {
@@ -73,7 +85,7 @@ class SupabaseAuth implements AuthApi {
       email,
       password,
       // The confirmation link brings the user back to the app wherever it is hosted.
-      options: { emailRedirectTo: `${window.location.origin}${window.location.pathname}` },
+      options: { emailRedirectTo: appUrl() },
     })
     if (error !== null) throw authError(error)
     return { needsConfirmation: data.session === null }
@@ -119,11 +131,11 @@ class SupabaseSessionStore implements RemoteSessionStore {
   }
 }
 
-export function createSupabaseCloud(url: string, publishableKey: string): Cloud {
+export function createSupabaseCloud(url: string, publishableKey: string, options: { google: boolean }): Cloud {
   const client = createClient(url, publishableKey, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
   })
-  return { auth: new SupabaseAuth(client), remote: new SupabaseSessionStore(client) }
+  return { auth: new SupabaseAuth(client, options.google), remote: new SupabaseSessionStore(client) }
 }
 
 /** Cloud from build-time config, or null when not configured (the app then stays local-only). */
@@ -131,5 +143,5 @@ export function cloudFromEnv(): Cloud | null {
   const url = import.meta.env.VITE_SUPABASE_URL
   const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
   if (url === undefined || url === '' || key === undefined || key === '') return null
-  return createSupabaseCloud(url, key)
+  return createSupabaseCloud(url, key, { google: import.meta.env.VITE_SUPABASE_GOOGLE === 'true' })
 }
