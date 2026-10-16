@@ -2,6 +2,8 @@ import type { ProgramStep } from '../core/programs'
 import { accuracy } from '../core/stats'
 import type { SessionRecord } from '../core/types'
 import { getExercise } from './exercises'
+import { sessionXp } from '../core/xp'
+import { Celebration } from './Celebration'
 import { formatPercent, formatSeconds } from './format'
 
 export interface ProgramRun {
@@ -59,7 +61,11 @@ export function ProgramSummary({ run, onHome }: { run: ProgramRun; onHome: () =>
   const correct = run.completed.reduce((s, r) => s + r.correct, 0)
   return (
     <section className="results">
-      <h2>Programme terminé — {run.title}</h2>
+      <Celebration
+        title={`Programme terminé — ${run.title}`}
+        accuracy={items === 0 ? 0 : correct / items}
+        xp={run.completed.reduce((s, r) => s + sessionXp(r), 0)}
+      />
       <dl className="stat-grid">
         <div>
           <dt>Précision globale</dt>

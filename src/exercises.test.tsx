@@ -6,6 +6,12 @@ import { applyStep, type ChainStep } from './domains/calculation/chain'
 import type { SessionRepository } from './storage/sessionRepository'
 import { EXERCISES } from './ui/exercises'
 
+/** Types an answer on the keypad through the physical keyboard (auto-validates at full length), then Enter. */
+function typeAnswer(value: string | number) {
+  for (const key of String(value)) fireEvent.keyDown(window, { key })
+  fireEvent.keyDown(window, { key: 'Enter' })
+}
+
 class MemoryRepository implements SessionRepository {
   records: SessionRecord[] = []
   list(): SessionRecord[] {
@@ -30,7 +36,13 @@ function advance(ms: number) {
   act(() => vi.advanceTimersByTime(ms))
 }
 
-const lastFeedback = () => document.querySelector('.feedback')?.textContent ?? ''
+/** Last feedback as "✓ detail" / "✗ detail" (result from data-result, detail without the random praise title). */
+function lastFeedback(): string {
+  const el = screen.queryByTestId('feedback')
+  if (el === null) return ''
+  const detail = el.querySelector('.feedback-text > span')?.textContent ?? ''
+  return `${el.dataset.result === 'ok' ? '✓' : '✗'} ${detail}`
+}
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -62,7 +74,7 @@ describe('calculation exercises', () => {
     start('Calcul en chaîne')
     const shown: string[] = []
     let previous = ''
-    for (let t = 0; t < 30_000 && screen.queryByLabelText('Réponse') === null; t += 50) {
+    for (let t = 0; t < 30_000 && screen.queryByTestId('answer-display') === null; t += 50) {
       advance(50)
       const text = screen.queryByTestId('chain-display')?.textContent?.trim() ?? ''
       if (text !== '' && text !== previous) shown.push(text)
@@ -74,9 +86,7 @@ describe('calculation exercises', () => {
       return { op: (op === '−' ? '-' : op) as ChainStep['op'], value: Number(value) }
     })
     const total = steps.reduce(applyStep, Number(startText))
-    const input = screen.getByLabelText('Réponse')
-    fireEvent.change(input, { target: { value: String(total) } })
-    fireEvent.submit(input.closest('form')!)
+    typeAnswer(total)
     expect(lastFeedback()).toMatch(/^✓/)
   })
 
@@ -118,9 +128,7 @@ describe('memory exercises', () => {
     }
     for (let i = 0; i < pairs.size; i++) {
       const cue = screen.getByTestId('cue').textContent!.replace(' – ?', '').trim()
-      const input = screen.getByLabelText('Réponse')
-      fireEvent.change(input, { target: { value: pairs.get(cue) } })
-      fireEvent.submit(input.closest('form')!)
+      fireEvent.change(screen.getByLabelText('Réponse'), { target: { value: pairs.get(cue) } })
     }
     expect(lastFeedback()).toMatch(/^✓ 3\/3 associations/)
   })

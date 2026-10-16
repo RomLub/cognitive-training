@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { SPAN_MODE_LABELS } from '../domains/memory/labels'
-import { DIGIT_MS, GAP_MS, generateTrial, LEVEL_BOUNDS, normalizeSpanAnswer, type SpanMode } from '../domains/memory/span'
+import { DIGIT_MS, GAP_MS, generateTrial, LEVEL_BOUNDS, type SpanMode } from '../domains/memory/span'
 import { parseDigitSequence } from '../voice/parse'
+import { NumericKeypad } from './NumericKeypad'
 import { SessionFrame, type ExerciseProps } from './SessionFrame'
 import { useVoiceAnswer } from './useVoiceAnswer'
 import { VoiceStatus } from './VoiceStatus'
@@ -19,7 +20,6 @@ export function MemorySession({ startLevel, focus, length, voice, onFinish, onQu
   const { item: trial, restartTimer } = session
   const [visibleDigit, setVisibleDigit] = useState<number | null>(null)
   const [answering, setAnswering] = useState(false)
-  const [input, setInput] = useState('')
 
   // Plays the sequence one digit at a time, then opens the answer field.
   useEffect(() => {
@@ -41,16 +41,10 @@ export function MemorySession({ startLevel, focus, length, voice, onFinish, onQu
     session.answer(answer === trial.answer, `Attendu : ${trial.answer.split('').join(' ')}`)
     setAnswering(false)
     setVisibleDigit(null)
-    setInput('')
   }
 
   const voiceState = useVoiceAnswer({ enabled: voice && answering, parse: parseDigitSequence, onAnswer: submit })
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-    const answer = normalizeSpanAnswer(input)
-    if (answer !== null) submit(answer)
-  }
 
   return (
     <SessionFrame
@@ -68,20 +62,7 @@ export function MemorySession({ startLevel, focus, length, voice, onFinish, onQu
       </p>
 
       {answering ? (
-        <form onSubmit={handleSubmit} className="answer-form">
-          <input
-            autoFocus
-            aria-label="Réponse"
-            inputMode="numeric"
-            autoComplete="off"
-            placeholder={trial.mode === 'forward' ? 'dans l’ordre' : 'à l’envers'}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-          />
-          <button type="submit" disabled={normalizeSpanAnswer(input) === null}>
-            Valider
-          </button>
-        </form>
+        <NumericKeypad expectedLength={trial.answer.length} onSubmit={submit} resetKey={session.index} />
       ) : (
         <p className="problem digit" aria-live="polite" data-testid="digit">
           {visibleDigit ?? ' '}

@@ -8,6 +8,8 @@ import { cloudFromEnv } from './sync/supabaseCloud'
 import { SYNC_LABELS } from './sync/syncLabels'
 import { useCloudSync } from './sync/useCloudSync'
 import { AccountPanel } from './ui/AccountPanel'
+import { loadSoundPreference, saveSoundPreference } from './ui/sound'
+import { SoundContext } from './ui/soundContext'
 import { analyzeExercise, getExercise } from './ui/exercises'
 import { Home } from './ui/Home'
 import { buildProgramContext } from './ui/programContext'
@@ -79,6 +81,14 @@ export default function App({ repository, cloud: cloudProp }: AppProps) {
   const [voice, setVoice] = useState(() => voiceSupported && loadVoicePreference())
   // Refreshed whenever the home screen is shown, for the streak.
   const [now, setNow] = useState(() => new Date())
+  const [sound, setSound] = useState(loadSoundPreference)
+
+  function toggleSound() {
+    setSound((on) => {
+      saveSoundPreference(!on)
+      return !on
+    })
+  }
 
   function toggleVoice() {
     setVoice((on) => {
@@ -138,6 +148,7 @@ export default function App({ repository, cloud: cloudProp }: AppProps) {
   }
 
   return (
+    <SoundContext.Provider value={sound}>
     <main className="app">
       <header className="app-header">
         <h1>
@@ -145,9 +156,19 @@ export default function App({ repository, cloud: cloudProp }: AppProps) {
             Cognitive Training
           </button>
         </h1>
+        <button
+          type="button"
+          className={`icon-toggle ${sound ? 'on' : ''}`}
+          aria-pressed={sound}
+          aria-label={`Sons : ${sound ? 'activés' : 'désactivés'}`}
+          title={`Sons : ${sound ? 'activés' : 'désactivés'}`}
+          onClick={toggleSound}
+        >
+          {sound ? '🔊' : '🔇'}
+        </button>
         {voiceSupported && (
           <button type="button" className={`voice-toggle ${voice ? 'on' : ''}`} aria-pressed={voice} onClick={toggleVoice}>
-            🎤 Réponse vocale : {voice ? 'activée' : 'désactivée'}
+            🎤 <span className="collapsible-label">Réponse vocale : {voice ? 'activée' : 'désactivée'}</span>
           </button>
         )}
         {cloud !== null && (
@@ -157,7 +178,7 @@ export default function App({ repository, cloud: cloudProp }: AppProps) {
             onClick={() => setScreen({ name: 'account' })}
             title={SYNC_LABELS[sync.status]}
           >
-            ☁️ {sync.user === null ? 'Se connecter' : SYNC_LABELS[sync.status]}
+            ☁️ <span className="collapsible-label">{sync.user === null ? 'Se connecter' : SYNC_LABELS[sync.status]}</span>
           </button>
         )}
       </header>
@@ -206,5 +227,6 @@ export default function App({ repository, cloud: cloudProp }: AppProps) {
       {screen.name === 'program-summary' && <ProgramSummary run={screen.run} onHome={home} />}
       {screen.name === 'account' && cloud !== null && <AccountPanel auth={cloud.auth} sync={sync} onBack={home} />}
     </main>
+    </SoundContext.Provider>
   )
 }

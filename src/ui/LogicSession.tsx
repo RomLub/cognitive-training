@@ -1,8 +1,8 @@
-import { useCallback, useState, type FormEvent } from 'react'
-import { parseAnswer } from '../domains/calculation/session'
+import { useCallback } from 'react'
 import { SERIES_RULE_LABELS } from '../domains/logic/labels'
 import { generateTrial, LEVEL_BOUNDS, type SeriesRule } from '../domains/logic/series'
 import { parseFrenchNumber } from '../voice/parse'
+import { NumericKeypad } from './NumericKeypad'
 import { SessionFrame, type ExerciseProps } from './SessionFrame'
 import { useAdaptiveSession } from './useAdaptiveSession'
 import { useVoiceAnswer } from './useVoiceAnswer'
@@ -14,21 +14,14 @@ export function LogicSession({ startLevel, focus, length, voice, onFinish, onQui
     return { ...t, category: t.rule }
   }, [focus])
   const session = useAdaptiveSession({ domain: 'logic', exercise: 'number-series', bounds: LEVEL_BOUNDS, length, startLevel, generate, onFinish })
-  const [input, setInput] = useState('')
   const trial = session.item
 
   function submit(value: number) {
     session.answer(value === trial.answer, `${trial.answer} — ${trial.explanation}`)
-    setInput('')
   }
 
   const voiceState = useVoiceAnswer({ enabled: voice, parse: parseFrenchNumber, onAnswer: submit })
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-    const value = parseAnswer(input)
-    if (value !== null) submit(value)
-  }
 
   return (
     <SessionFrame
@@ -46,19 +39,7 @@ export function LogicSession({ startLevel, focus, length, voice, onFinish, onQui
         {trial.terms.join(', ')}, ?
       </p>
 
-      <form onSubmit={handleSubmit} className="answer-form">
-        <input
-          autoFocus
-          aria-label="Réponse"
-          inputMode="numeric"
-          autoComplete="off"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-        />
-        <button type="submit" disabled={parseAnswer(input) === null}>
-          Valider
-        </button>
-      </form>
+      <NumericKeypad expectedLength={String(trial.answer).length} onSubmit={(v) => submit(Number(v))} resetKey={session.index} />
     </SessionFrame>
   )
 }

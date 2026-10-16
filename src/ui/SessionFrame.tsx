@@ -1,5 +1,8 @@
-import type { ReactNode } from 'react'
+import { useContext, useEffect, type ReactNode } from 'react'
 import type { SessionRecord } from '../core/types'
+import { Mascot } from './Mascot'
+import { sounds } from './sound'
+import { SoundContext } from './soundContext'
 import type { Feedback } from './useAdaptiveSession'
 
 /** Props shared by every exercise session component. */
@@ -30,21 +33,56 @@ interface Props {
   children: ReactNode
 }
 
+const PRAISE = ['Bien joué !', 'Excellent !', 'Parfait !', 'Bravo !', 'Tu gères !', 'Impeccable !']
+const NUDGE = ['Pas tout à fait', 'Presque !', 'Raté de peu', 'On continue !']
+
+/** Title of the feedback pill; varies with the item so it does not repeat word for word. */
+function feedbackTitle(feedback: Feedback, index: number): string {
+  if (!feedback.correct) return NUDGE[index % NUDGE.length]!
+  if (feedback.combo >= 5) return `Série de ${feedback.combo} !`
+  return PRAISE[index % PRAISE.length]!
+}
+
 export function SessionFrame({ itemLabel, index, length, level, focusLabel, feedback, timeLimit = null, onQuit, status, children }: Props) {
+  const soundOn = useContext(SoundContext)
+  const combo = feedback?.combo ?? 0
+
+  useEffect(() => {
+    if (feedback === null || !soundOn) return
+    if (feedback.correct) sounds.correct()
+    else sounds.wrong()
+  }, [feedback, soundOn])
+
   return (
     <section className="session">
-      <header className="session-header">
+      <header className="session-top">
+        <button type="button" className="quit" aria-label="Abandonner" onClick={onQuit}>
+          ✕
+        </button>
+        <div
+          className="progress-track"
+          role="progressbar"
+          aria-label="Progression"
+          aria-valuemin={0}
+          aria-valuemax={length}
+          aria-valuenow={index}
+        >
+          <div className="progress-fill" style={{ width: `${(index / length) * 100}%` }} />
+        </div>
+        {combo >= 2 && (
+          <span className="combo" key={combo} title="Bonnes réponses d’affilée">
+            🔥 {combo}
+          </span>
+        )}
+      </header>
+
+      <p className="session-meta">
         <span>
           {itemLabel} {index + 1}/{length}
         </span>
         <span>Niveau {level}</span>
         {focusLabel !== null && <span className="focus">Focus : {focusLabel}</span>}
-        <button type="button" className="link" onClick={onQuit}>
-          Abandonner
-        </button>
-      </header>
-
-      <progress max={length} value={index} />
+      </p>
 
       {timeLimit !== null && (
         // Keyed on the item index so the animation restarts for each item.
@@ -53,13 +91,26 @@ export function SessionFrame({ itemLabel, index, length, level, focusLabel, feed
         </div>
       )}
 
-      {children}
+      <div className="feedback-slot">
+        {feedback !== null && (
+          <div
+            key={index}
+            data-testid="feedback"
+            data-result={feedback.correct ? 'ok' : 'ko'}
+            className={`feedback ${feedback.correct ? 'ok' : 'ko'}`}
+            role="status"
+          >
+            <Mascot mood={feedback.correct ? (combo >= 5 ? 'celebrate' : 'happy') : 'sad'} size={36} />
+            <span className="feedback-text">
+              <strong>{feedbackTitle(feedback, index)}</strong> <span>{feedback.text}</span>
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="session-stage">{children}</div>
 
       {status}
-
-      <p className={`feedback ${feedback === null ? '' : feedback.correct ? 'ok' : 'ko'}`}>
-        {feedback === null ? ' ' : `${feedback.correct ? '✓' : '✗'} ${feedback.text}`}
-      </p>
     </section>
   )
 }

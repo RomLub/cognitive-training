@@ -12,6 +12,8 @@ export interface SessionItem {
 export interface Feedback {
   correct: boolean
   text: string
+  /** Consecutive correct answers including this one (0 after a mistake). */
+  combo: number
 }
 
 interface Options<T extends SessionItem> {
@@ -90,12 +92,12 @@ export function useAdaptiveSession<T extends SessionItem>(options: Options<T>): 
         return
       }
 
-      setFeedback({ correct, text: feedbackText })
+      setFeedback({ correct, text: feedbackText, combo: correct ? (feedback?.combo ?? 0) + 1 : 0 })
       setResults(nextResults)
       setAdaptive(nextAdaptive)
       setItem(generate(nextAdaptive.level))
     },
-    [item, results, adaptive, bounds, length, onFinish, domain, exercise, startedAt, startLevel, generate],
+    [item, results, adaptive, bounds, length, onFinish, domain, exercise, startedAt, startLevel, generate, feedback],
   )
 
   // Latest `answer` for the deadline timer, which must not restart on unrelated re-renders.

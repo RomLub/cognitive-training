@@ -4,6 +4,7 @@ import { ASSOCIATION_KIND_LABELS } from '../domains/episodic/labels'
 import { generatePairs, isRightPartner, LEVEL_BOUNDS, type AssociationKind } from '../domains/episodic/pairs'
 import { SessionFrame, type ExerciseProps } from './SessionFrame'
 import { useAdaptiveSession } from './useAdaptiveSession'
+import { usePersistentFocus } from './usePersistentFocus'
 import { useVoiceAnswer } from './useVoiceAnswer'
 import { VoiceStatus } from './VoiceStatus'
 
@@ -23,6 +24,7 @@ export function PairsSession({ startLevel, focus, length, voice, onFinish, onQui
   const [step, setStep] = useState(0)
   const [results, setResults] = useState<boolean[]>([])
   const [input, setInput] = useState('')
+  const field = usePersistentFocus(testing)
 
   useEffect(() => {
     const slot = trial.showMs + GAP_MS
@@ -59,9 +61,14 @@ export function PairsSession({ startLevel, focus, length, voice, onFinish, onQui
     setTesting(false)
   }
 
+  function handleChange(value: string) {
+    if (isRightPartner(trial, trial.testOrder[step]!, value)) submit(value)
+    else setInput(value)
+  }
+
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    submit(input)
+    if (input.trim() !== '') submit(input)
   }
 
   const voiceState = useVoiceAnswer({
@@ -100,7 +107,7 @@ export function PairsSession({ startLevel, focus, length, voice, onFinish, onQui
             {cue} – ?
           </p>
           <form onSubmit={handleSubmit} className="answer-form">
-            <input autoFocus aria-label="Réponse" autoComplete="off" value={input} onChange={(e) => setInput(e.target.value)} />
+            <input ref={field} aria-label="Réponse" autoComplete="off" value={input} onChange={(e) => handleChange(e.target.value)} />
             <button type="submit" disabled={input.trim() === ''}>
               Valider
             </button>

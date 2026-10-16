@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { formatStep, generateTrial, LEVEL_BOUNDS, type ChainKind } from '../domains/calculation/chain'
 import { CHAIN_KIND_LABELS } from '../domains/calculation/labels'
 import { parseFrenchNumber } from '../voice/parse'
-import { NumberAnswerForm } from './NumberAnswerForm'
+import { NumericKeypad } from './NumericKeypad'
 import { SessionFrame, type ExerciseProps } from './SessionFrame'
 import { useAdaptiveSession } from './useAdaptiveSession'
 import { useVoiceAnswer } from './useVoiceAnswer'
@@ -62,7 +62,7 @@ export function ChainSession({ startLevel, focus, length, voice, onFinish, onQui
         {answering ? 'Quel est le résultat ?' : `Garde le total en tête · ${trial.steps.length} opérations`}
       </p>
       {answering ? (
-        <NumberAnswerForm key={session.index} onSubmit={submit} />
+        <NumericKeypad expectedLength={String(trial.answer).length} onSubmit={(v) => submit(Number(v))} resetKey={session.index} />
       ) : (
         <p className="problem" aria-live="polite" data-testid="chain-display">
           {display}

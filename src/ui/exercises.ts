@@ -68,16 +68,17 @@ import { TrailSession } from './TrailSession'
 import { VisualSearchSession } from './VisualSearchSession'
 import { WordListSession } from './WordListSession'
 
-export const DOMAIN_INFO: Readonly<Record<CognitiveDomain, { title: string }>> = {
-  calculation: { title: 'Calcul mental' },
-  memory: { title: 'Mémoire de travail' },
-  episodic: { title: 'Mémoire épisodique' },
-  attention: { title: 'Attention' },
-  executive: { title: 'Fonctions exécutives' },
-  logic: { title: 'Raisonnement' },
-  speed: { title: 'Vitesse de traitement' },
-  language: { title: 'Langage' },
-  visuospatial: { title: 'Visuo-spatial' },
+/** Title, icon and identity color of each domain (icons on home, accents on cards). */
+export const DOMAIN_INFO: Readonly<Record<CognitiveDomain, { title: string; icon: string; color: string }>> = {
+  calculation: { title: 'Calcul mental', icon: '🧮', color: '#ffb020' },
+  memory: { title: 'Mémoire de travail', icon: '🧠', color: '#7b5cfa' },
+  episodic: { title: 'Mémoire épisodique', icon: '📚', color: '#ff6fb5' },
+  attention: { title: 'Attention', icon: '🎯', color: '#ff5d6c' },
+  executive: { title: 'Fonctions exécutives', icon: '🧩', color: '#19b5c8' },
+  logic: { title: 'Raisonnement', icon: '💡', color: '#3d8bff' },
+  speed: { title: 'Vitesse de traitement', icon: '⏱️', color: '#ff8a3d' },
+  language: { title: 'Langage', icon: '💬', color: '#2ec4a0' },
+  visuospatial: { title: 'Visuo-spatial', icon: '🔷', color: '#8bd13d' },
 }
 
 export interface ExerciseUi {

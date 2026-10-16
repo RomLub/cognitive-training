@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { PRACTICAL_KIND_LABELS } from '../domains/calculation/labels'
 import { generateTrial, LEVEL_BOUNDS, type PracticalKind } from '../domains/calculation/practical'
 import { parseFrenchNumber } from '../voice/parse'
-import { NumberAnswerForm } from './NumberAnswerForm'
+import { NumericKeypad } from './NumericKeypad'
 import { SessionFrame, type ExerciseProps } from './SessionFrame'
 import { useAdaptiveSession } from './useAdaptiveSession'
 import { useVoiceAnswer } from './useVoiceAnswer'
@@ -36,7 +36,12 @@ export function PracticalSession({ startLevel, focus, length, voice, onFinish, o
       <p className="problem practical" aria-live="polite">
         {trial.prompt}
       </p>
-      <NumberAnswerForm key={session.index} onSubmit={submit} suffix={trial.unit === '' ? undefined : trial.unit} />
+      <NumericKeypad
+        expectedLength={String(trial.answer).length}
+        onSubmit={(v) => submit(Number(v))}
+        resetKey={session.index}
+        suffix={trial.unit === '' ? undefined : trial.unit}
+      />
     </SessionFrame>
   )
 }

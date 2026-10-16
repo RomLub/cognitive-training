@@ -2,6 +2,8 @@ import { accuracy, categoryStats } from '../core/stats'
 import type { SessionRecord } from '../core/types'
 import { CategoryTable } from './CategoryTable'
 import type { ExerciseUi } from './exercises'
+import { sessionXp } from '../core/xp'
+import { Celebration } from './Celebration'
 import { capitalize, formatPercent, formatSeconds } from './format'
 
 interface Props {
@@ -15,18 +17,18 @@ export function Results({ config, record, onRestart, onHome }: Props) {
   const levelDelta = record.endLevel - record.startLevel
   return (
     <section className="results">
-      <h2>Session terminée — {config.title}</h2>
+      <Celebration title={`Session terminée — ${config.title}`} accuracy={accuracy(record)} xp={sessionXp(record)} />
       <dl className="stat-grid">
         <div>
-          <dt>Précision</dt>
+          <dt>🎯 Précision</dt>
           <dd>{formatPercent(accuracy(record))}</dd>
         </div>
         <div>
-          <dt>Temps moyen</dt>
+          <dt>⏱️ Temps moyen</dt>
           <dd>{formatSeconds(record.avgResponseMs)}</dd>
         </div>
         <div>
-          <dt>Niveau</dt>
+          <dt>📈 Niveau</dt>
           <dd>
             {record.startLevel} → {record.endLevel}
             {levelDelta !== 0 && <small>{levelDelta > 0 ? ` (+${levelDelta})` : ` (${levelDelta})`}</small>}
@@ -38,6 +40,14 @@ export function Results({ config, record, onRestart, onHome }: Props) {
           🏁 Niveau maximal atteint ({config.bounds.max}) : cet exercice ne te met plus en difficulté. Il faudra l’étendre.
         </p>
       )}
+      <div className="actions results-actions">
+        <button type="button" className="big" onClick={onHome} autoFocus>
+          Accueil
+        </button>
+        <button type="button" className="secondary big" onClick={onRestart}>
+          Nouvelle session
+        </button>
+      </div>
       <h3>Par {config.categoryNoun}</h3>
       <CategoryTable
         stats={categoryStats([record])}
@@ -45,14 +55,6 @@ export function Results({ config, record, onRestart, onHome }: Props) {
         header={capitalize(config.categoryNoun)}
         order={config.order}
       />
-      <div className="actions">
-        <button type="button" onClick={onRestart}>
-          Nouvelle session
-        </button>
-        <button type="button" className="secondary" onClick={onHome}>
-          Accueil
-        </button>
-      </div>
     </section>
   )
 }

@@ -9,6 +9,20 @@ import { SESSION_LENGTH as LOGIC_SESSION_LENGTH } from './domains/logic/series'
 import { SESSION_LENGTH as SPEED_SESSION_LENGTH } from './domains/speed/compare'
 import type { SessionRepository } from './storage/sessionRepository'
 
+/** Last feedback as "✓ detail" / "✗ detail" (result from data-result, detail without the random praise title). */
+function lastFeedback(): string {
+  const el = screen.queryByTestId('feedback')
+  if (el === null) return ''
+  const detail = el.querySelector('.feedback-text > span')?.textContent ?? ''
+  return `${el.dataset.result === 'ok' ? '✓' : '✗'} ${detail}`
+}
+
+/** Types an answer on the keypad through the physical keyboard (auto-validates at full length), then Enter. */
+function typeAnswer(value: string | number) {
+  for (const key of String(value)) fireEvent.keyDown(window, { key })
+  fireEvent.keyDown(window, { key: 'Enter' })
+}
+
 class MemoryRepository implements SessionRepository {
   records: SessionRecord[] = []
   list(): SessionRecord[] {
@@ -47,7 +61,7 @@ function solveDisplayedProblem(): number {
 function watchSequence(): number[] {
   const seen: number[] = []
   let previous = ''
-  for (let t = 0; t < 60_000 && screen.queryByLabelText('Réponse') === null; t += 50) {
+  for (let t = 0; t < 60_000 && screen.queryByTestId('answer-display') === null; t += 50) {
     act(() => vi.advanceTimersByTime(50))
     const text = screen.queryByTestId('digit')?.textContent?.trim() ?? ''
     if (/^\d$/.test(text) && text !== previous) seen.push(Number(text))
@@ -85,9 +99,7 @@ function answerCurrentItem() {
   if (document.querySelector('.span-mode') !== null) {
     const backward = document.querySelector('.span-mode')!.classList.contains('backward')
     const digits = watchSequence()
-    const input = screen.getByLabelText('Réponse')
-    fireEvent.change(input, { target: { value: (backward ? digits.toReversed() : digits).join('') } })
-    fireEvent.submit(input.closest('form')!)
+    typeAnswer((backward ? digits.toReversed() : digits).join(''))
     return
   }
   if (document.querySelector('.stroop-word') !== null) {
@@ -102,10 +114,7 @@ function answerCurrentItem() {
     fireEvent.click(screen.getByRole('button', { name: same ? /^Identiques/ : /^Différents/ }))
     return
   }
-  const input = screen.getByLabelText('Réponse')
-  const value = document.querySelector('.series') !== null ? 0 : solveDisplayedProblem()
-  fireEvent.change(input, { target: { value: String(value) } })
-  fireEvent.submit(input.closest('form')!)
+  typeAnswer(document.querySelector('.series') !== null ? 0 : solveDisplayedProblem())
 }
 
 function weakCalcRecord(): SessionRecord {
@@ -127,11 +136,7 @@ describe('App calculation flow', () => {
     render(<App repository={repo} />)
 
     clickInCard('Opérations', 'Commencer')
-    const input = screen.getByLabelText('Réponse')
-    for (let i = 0; i < CALC_SESSION_LENGTH; i++) {
-      fireEvent.change(input, { target: { value: String(solveDisplayedProblem()) } })
-      fireEvent.submit(input.closest('form')!)
-    }
+    for (let i = 0; i < CALC_SESSION_LENGTH; i++) typeAnswer(solveDisplayedProblem())
 
     expect(screen.getByText(/Session terminée/)).toBeTruthy()
     // Overall precision plus one row per operation practised.
@@ -207,9 +212,7 @@ describe('App working memory flow', () => {
       const digits = watchSequence()
       expect(digits.length).toBeGreaterThanOrEqual(2)
       const answer = (backward ? digits.toReversed() : digits).join('')
-      const input = screen.getByLabelText('Réponse')
-      fireEvent.change(input, { target: { value: answer } })
-      fireEvent.submit(input.closest('form')!)
+      typeAnswer(answer)
     }
 
     expect(screen.getByText(/Session terminée — Empan de chiffres/)).toBeTruthy()
@@ -225,10 +228,8 @@ describe('App working memory flow', () => {
     render(<App repository={new MemoryRepository()} />)
     clickInCard('Empan de chiffres', 'Commencer')
     watchSequence()
-    const input = screen.getByLabelText('Réponse')
-    fireEvent.change(input, { target: { value: '0' } })
-    fireEvent.submit(input.closest('form')!)
-    expect(screen.getByText(/✗ Attendu :/)).toBeTruthy()
+    typeAnswer('0')
+    expect(lastFeedback()).toMatch(/✗ Attendu :/)
   })
 
   it('focuses on the weakest recall mode', () => {
@@ -280,7 +281,7 @@ describe('App attention, logic and speed', () => {
       const word = document.querySelector('.stroop-word')!.textContent!.toLowerCase()
       if (word !== INK_TO_NAME[inkOnScreen()]!.toLowerCase()) {
         fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${word.charAt(0).toUpperCase()}${word.slice(1)}`) }))
-        expect(screen.getByText(/✗ L’encre était/)).toBeTruthy()
+        expect(lastFeedback()).toMatch(/✗ L’encre était/)
         return
       }
       answerCurrentItem()
@@ -293,7 +294,7 @@ describe('App attention, logic and speed', () => {
     clickInCard('Stroop', 'Commencer')
     const key = ({ red: 'r', blue: 'b', green: 'v', yellow: 'j' } as Record<string, string>)[inkOnScreen()]!
     fireEvent.keyDown(window, { key })
-    expect(screen.getByText(/^✓/)).toBeTruthy()
+    expect(lastFeedback()).toMatch(/^✓/)
   })
 
   it('attention: the deadline counts a missing answer as an error', () => {
@@ -302,7 +303,7 @@ describe('App attention, logic and speed', () => {
     clickInCard('Stroop', 'Commencer')
     expect(screen.getByText('Essai 1/24')).toBeTruthy()
     act(() => vi.advanceTimersByTime(3100))
-    expect(screen.getByText(/✗ Trop lent/)).toBeTruthy()
+    expect(lastFeedback()).toMatch(/✗ Trop lent/)
     expect(screen.getByText('Essai 2/24')).toBeTruthy()
   })
 
@@ -312,7 +313,7 @@ describe('App attention, logic and speed', () => {
     clickInCard('Suites de nombres', 'Commencer')
     expect(document.querySelector('.series')!.textContent).toMatch(/^(\d+, )+\?$/)
     answerCurrentItem()
-    expect(screen.getByText(/[✓✗] \d+ — /)).toBeTruthy()
+    expect(lastFeedback()).toMatch(/[✓✗] \d+ — /)
     for (let i = 1; i < LOGIC_SESSION_LENGTH; i++) answerCurrentItem()
     expect(screen.getByText(/Session terminée — Suites de nombres/)).toBeTruthy()
     expect(repo.records[0]!.items).toBe(LOGIC_SESSION_LENGTH)
@@ -422,7 +423,7 @@ describe('App voice answers', () => {
     expect(screen.getByText(/À l’écoute/)).toBeTruthy()
 
     recognition.say('bonjour', String(solveDisplayedProblem()))
-    expect(screen.getByText(/^✓/)).toBeTruthy()
+    expect(lastFeedback()).toMatch(/^✓/)
     expect(screen.getByText('Question 2/20')).toBeTruthy()
 
     recognition.say('je ne sais pas')
@@ -436,7 +437,7 @@ describe('App voice answers', () => {
     render(<App repository={new MemoryRepository()} />)
     clickInCard('Stroop', 'Commencer')
     activeRecognition().say(INK_TO_NAME[inkOnScreen()]!.toLowerCase())
-    expect(screen.getByText(/^✓/)).toBeTruthy()
+    expect(lastFeedback()).toMatch(/^✓/)
   })
 
   it('reports a refused microphone', () => {
@@ -471,7 +472,7 @@ describe('App difficulty ceiling, evolution and chart', () => {
       const isWord = screen.getByTestId('stroop-cue').textContent === 'MOT'
       answerCurrentItem()
       if (isWord) {
-        expect(screen.getAllByText(/^✓/).length).toBeGreaterThan(0)
+        expect(lastFeedback()).toMatch(/^✓/)
         return
       }
     }

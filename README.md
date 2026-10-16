@@ -79,6 +79,16 @@ Tous les exercices partagent :
 - Pour les exercices « par bloc » (n-back, liste de mots, paires, Trail Making, fluence…), un item = un bloc entier,
   réussi au-dessus d'un seuil (ex. 85 % en n-back, 70 % des mots rappelés).
 
+## Interface
+
+- **Pavé numérique intégré** pour toutes les réponses chiffrées : pas de clavier du téléphone à ouvrir, et au PC on tape
+  directement sans cliquer. La réponse est **validée automatiquement** dès qu'elle a le bon nombre de chiffres (✓ ou
+  Entrée pour valider avant). Les champs texte gardent le focus ; anagrammes et paires de mots se valident seuls.
+- **Côté ludique** : XP (2 par bonne réponse, 3 par niveau gagné), objectif du jour (40 XP), série de jours,
+  combo de bonnes réponses d'affilée, retours colorés avec Neuro la mascotte, sons (désactivables, 🔊 en haut),
+  écran de fin festif. Les XP se calculent à partir de l'historique : rien de plus à stocker ni à synchroniser.
+- Animations seulement en réponse à une action, désactivées si le système demande de réduire les animations.
+
 ## Progrès
 
 Par exercice : graphique du niveau en fin de session (survol = détail), et **évolution par rapport à soi-même** :

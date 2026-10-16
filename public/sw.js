@@ -1,7 +1,9 @@
 // Service worker: makes the app work offline once loaded.
 // Pages: network first (to pick up new versions), cached copy when offline.
 // Static assets (hashed by Vite): cache first.
-const CACHE = 'cognitive-training-v1'
+const CACHE = 'cognitive-training-v2'
+/** Google Fonts are cross-origin but cached too, so the app keeps its look offline. */
+const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com']
 const SHELL = ['./', './index.html', './manifest.webmanifest', './favicon.svg', './icons/icon-192.png']
 
 self.addEventListener('install', (event) => {
@@ -18,7 +20,23 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const request = event.request
-  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return
+  if (request.method !== 'GET') return
+  const url = new URL(request.url)
+  if (FONT_HOSTS.includes(url.hostname)) {
+    event.respondWith(
+      caches.match(request).then(
+        (cached) =>
+          cached ??
+          fetch(request).then((response) => {
+            const copy = response.clone()
+            caches.open(CACHE).then((cache) => cache.put(request, copy))
+            return response
+          }),
+      ),
+    )
+    return
+  }
+  if (url.origin !== self.location.origin) return
 
   if (request.mode === 'navigate') {
     event.respondWith(

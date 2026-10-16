@@ -4,6 +4,7 @@ import { generateTrial, isSolution, letters, LEVEL_BOUNDS, timeLimitMs, type Ana
 import { ANAGRAM_KIND_LABELS } from '../domains/language/labels'
 import { SessionFrame, type ExerciseProps } from './SessionFrame'
 import { useAdaptiveSession } from './useAdaptiveSession'
+import { usePersistentFocus } from './usePersistentFocus'
 import { useVoiceAnswer } from './useVoiceAnswer'
 import { VoiceStatus } from './VoiceStatus'
 
@@ -25,6 +26,7 @@ export function AnagramSession({ startLevel, focus, length, voice, onFinish, onQ
   })
   const trial = session.item
   const [input, setInput] = useState('')
+  const field = usePersistentFocus()
   const [miss, setMiss] = useState<string | null>(null)
 
   /** A wrong guess does not end the item: the user can try again until the deadline. */
@@ -36,6 +38,12 @@ export function AnagramSession({ startLevel, focus, length, voice, onFinish, onQ
       setMiss(answer)
     }
     setInput('')
+  }
+
+  /** Validates by itself once the word has as many letters as the scramble. */
+  function handleChange(value: string) {
+    if (letters(value).length === trial.scrambled.length) tryAnswer(value)
+    else setInput(value)
   }
 
   function handleSubmit(event: FormEvent) {
@@ -62,7 +70,14 @@ export function AnagramSession({ startLevel, focus, length, voice, onFinish, onQ
         {trial.scrambled.split('').join(' ')}
       </p>
       <form onSubmit={handleSubmit} className="answer-form">
-        <input autoFocus aria-label="Réponse" autoComplete="off" value={input} onChange={(e) => setInput(e.target.value)} />
+        <input
+          ref={field}
+          aria-label="Réponse"
+          autoComplete="off"
+          autoCapitalize="characters"
+          value={input}
+          onChange={(e) => handleChange(e.target.value)}
+        />
         <button type="submit" disabled={input.trim() === ''}>
           Valider
         </button>

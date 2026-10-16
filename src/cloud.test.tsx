@@ -6,6 +6,12 @@ import { SESSION_LENGTH } from './domains/calculation/session'
 import type { SessionRepository } from './storage/sessionRepository'
 import type { AuthApi, Cloud, CloudUser, RemoteSessionStore } from './sync/cloud'
 
+/** Types an answer on the keypad through the physical keyboard (auto-validates at full length), then Enter. */
+function typeAnswer(value: string | number) {
+  for (const key of String(value)) fireEvent.keyDown(window, { key })
+  fireEvent.keyDown(window, { key: 'Enter' })
+}
+
 class MemoryRepository implements SessionRepository {
   records: SessionRecord[] = []
   list() {
@@ -146,11 +152,7 @@ describe('shared history', () => {
     fireEvent.click(screen.getByRole('button', { name: /Accueil/ }))
 
     fireEvent.click(within(screen.getByRole('article', { name: 'Opérations' })).getByRole('button', { name: 'Commencer' }))
-    const input = screen.getByLabelText('Réponse')
-    for (let i = 0; i < SESSION_LENGTH; i++) {
-      fireEvent.change(input, { target: { value: String(solveDisplayedProblem()) } })
-      fireEvent.submit(input.closest('form')!)
-    }
+    for (let i = 0; i < SESSION_LENGTH; i++) typeAnswer(solveDisplayedProblem())
     await waitFor(() => expect(remote.records).toHaveLength(1))
     expect(remote.records[0]!.exercise).toBe('arithmetic')
   })

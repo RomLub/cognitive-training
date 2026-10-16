@@ -4,6 +4,7 @@ import { generateRound, judgeWord, LEVEL_BOUNDS, type FluencyKind, type WordVerd
 import { FLUENCY_KIND_LABELS } from '../domains/language/labels'
 import { SessionFrame, type ExerciseProps } from './SessionFrame'
 import { useAdaptiveSession } from './useAdaptiveSession'
+import { usePersistentFocus } from './usePersistentFocus'
 import { useVoiceAnswer } from './useVoiceAnswer'
 import { VoiceStatus } from './VoiceStatus'
 
@@ -45,6 +46,7 @@ export function FluencySession({ startLevel, focus, length, voice, onFinish, onQ
   const round = session.item
   const [entries, setEntries] = useState<Entry[]>([])
   const [input, setInput] = useState('')
+  const field = usePersistentFocus()
   const [secondsLeft, setSecondsLeft] = useState(Math.round(round.durationMs / 1000))
   const [shownFor, setShownFor] = useState(round)
 
@@ -110,7 +112,7 @@ export function FluencySession({ startLevel, focus, length, voice, onFinish, onQ
         {!voice && <span className="muted"> · active la réponse vocale pour parler au lieu d’écrire</span>}
       </p>
       <form onSubmit={handleSubmit} className="answer-form">
-        <input autoFocus aria-label="Mot" autoComplete="off" value={input} onChange={(e) => setInput(e.target.value)} placeholder="un mot, puis Entrée" />
+        <input ref={field} aria-label="Mot" autoComplete="off" value={input} onChange={(e) => setInput(e.target.value)} placeholder="un mot, puis Entrée" />
         <button type="submit" className="secondary" disabled={input.trim() === ''}>
           Ajouter
         </button>

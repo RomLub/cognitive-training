@@ -4,6 +4,7 @@ import { LIST_KIND_LABELS } from '../domains/episodic/labels'
 import { generateList, LEVEL_BOUNDS, scoreRecall, type ListKind } from '../domains/episodic/wordList'
 import { SessionFrame, type ExerciseProps } from './SessionFrame'
 import { useAdaptiveSession } from './useAdaptiveSession'
+import { usePersistentFocus } from './usePersistentFocus'
 import { useVoiceAnswer } from './useVoiceAnswer'
 import { VoiceStatus } from './VoiceStatus'
 
@@ -24,6 +25,7 @@ export function WordListSession({ startLevel, focus, length, voice, onFinish, on
   const [secondsLeft, setSecondsLeft] = useState(0)
   const [recalled, setRecalled] = useState<string[]>([])
   const [input, setInput] = useState('')
+  const field = usePersistentFocus(phase === 'recall')
 
   // Study: one word at a time; then the delay with a countdown; then recall.
   useEffect(() => {
@@ -123,7 +125,7 @@ export function WordListSession({ startLevel, focus, length, voice, onFinish, on
           </p>
           <form onSubmit={handleAdd} className="answer-form">
             <input
-              autoFocus
+              ref={field}
               aria-label="Mot"
               autoComplete="off"
               value={input}
