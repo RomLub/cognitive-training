@@ -4,6 +4,8 @@ import { isCognitiveDomain, type CognitiveDomain, type SessionRecord } from '../
 export interface SessionRepository {
   list(): SessionRecord[]
   add(record: SessionRecord): void
+  /** Adds several sessions at once (e.g. from another device); ids already present are skipped. */
+  addMany(records: readonly SessionRecord[]): void
 }
 
 export class StorageCorruptedError extends Error {
@@ -57,6 +59,11 @@ function isBreakdown(value: unknown): boolean {
   })
 }
 
+/** Validates an unknown value (local storage, server) and migrates it; null when it is not a valid session. */
+export function parseSessionRecord(value: unknown): SessionRecord | null {
+  return isStoredRecord(value) ? migrate(value) : null
+}
+
 /** Fills in the exercise of legacy records; null when it cannot be inferred. */
 function migrate(record: StoredRecord): SessionRecord | null {
   if (record.exercise !== undefined) return { ...record, exercise: record.exercise }
@@ -84,7 +91,7 @@ export class LocalStorageSessionRepository implements SessionRepository {
       throw new StorageCorruptedError(`Expected an array under "${STORAGE_KEY}"`)
     }
     return parsed.map((item: unknown, index) => {
-      const migrated = isStoredRecord(item) ? migrate(item) : null
+      const migrated = parseSessionRecord(item)
       if (migrated === null) throw new StorageCorruptedError(`Invalid session record at index ${index}`)
       return migrated
     })
@@ -95,6 +102,19 @@ export class LocalStorageSessionRepository implements SessionRepository {
     if (!isStoredRecord(record) || typeof exercise !== 'string') throw new Error('Refusing to store an invalid session record')
     const records = this.list()
     records.push(record)
+    this.storage.setItem(STORAGE_KEY, JSON.stringify(records))
+  }
+
+  addMany(incoming: readonly SessionRecord[]): void {
+    const invalid = incoming.findIndex((r) => parseSessionRecord(r) === null || typeof (r as { exercise?: unknown }).exercise !== 'string')
+    if (invalid !== -1) throw new Error(`Refusing to store an invalid session record (index ${invalid})`)
+    const records = this.list()
+    const ids = new Set(records.map((r) => r.id))
+    for (const r of incoming) {
+      if (ids.has(r.id)) continue
+      ids.add(r.id)
+      records.push(r)
+    }
     this.storage.setItem(STORAGE_KEY, JSON.stringify(records))
   }
 }

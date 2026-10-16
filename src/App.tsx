@@ -3,6 +3,11 @@ import { getProgram, type ProgramId } from './core/programs'
 import { progressOf, sessionsOf } from './core/stats'
 import type { SessionRecord } from './core/types'
 import { LocalStorageSessionRepository, type SessionRepository } from './storage/sessionRepository'
+import type { Cloud } from './sync/cloud'
+import { cloudFromEnv } from './sync/supabaseCloud'
+import { SYNC_LABELS } from './sync/syncLabels'
+import { useCloudSync } from './sync/useCloudSync'
+import { AccountPanel } from './ui/AccountPanel'
 import { analyzeExercise, getExercise } from './ui/exercises'
 import { Home } from './ui/Home'
 import { buildProgramContext } from './ui/programContext'
@@ -27,6 +32,7 @@ type Screen =
   | { name: 'progress'; exercise: string }
   | { name: 'program-step'; run: ProgramRun }
   | { name: 'program-summary'; run: ProgramRun }
+  | { name: 'account' }
 
 /** Per-browser convenience setting; the app works without it. */
 const VOICE_KEY = 'cognitive-training:voice'
@@ -56,9 +62,18 @@ function loadRecords(repo: SessionRepository): { records: SessionRecord[]; error
   }
 }
 
-export default function App({ repository }: { repository?: SessionRepository }) {
+interface AppProps {
+  repository?: SessionRepository
+  /** Shared history; defaults to the build-time Supabase config, null for local-only. */
+  cloud?: Cloud | null
+}
+
+export default function App({ repository, cloud: cloudProp }: AppProps) {
   const repo = useMemo(() => repository ?? new LocalStorageSessionRepository(), [repository])
+  const [cloud] = useState(() => (cloudProp === undefined ? cloudFromEnv() : cloudProp))
   const [{ records, error }, setState] = useState(() => loadRecords(repo))
+  // Sessions arriving from other devices refresh the screen.
+  const sync = useCloudSync(cloud, repo, () => setState(loadRecords(repo)))
   const [screen, setScreen] = useState<Screen>({ name: 'home' })
   const [voiceSupported] = useState(isSpeechSupported)
   const [voice, setVoice] = useState(() => voiceSupported && loadVoicePreference())
@@ -97,6 +112,7 @@ export default function App({ repository }: { repository?: SessionRepository }) 
     try {
       repo.add(record)
       setState(loadRecords(repo))
+      sync.syncNow()
     } catch (err) {
       console.error('Failed to save session', err)
       setState((s) => ({ ...s, error: `Session non enregistrée : ${err instanceof Error ? err.message : String(err)}` }))
@@ -132,6 +148,16 @@ export default function App({ repository }: { repository?: SessionRepository }) 
         {voiceSupported && (
           <button type="button" className={`voice-toggle ${voice ? 'on' : ''}`} aria-pressed={voice} onClick={toggleVoice}>
             🎤 Réponse vocale : {voice ? 'activée' : 'désactivée'}
+          </button>
+        )}
+        {cloud !== null && (
+          <button
+            type="button"
+            className={`sync-badge ${sync.status}`}
+            onClick={() => setScreen({ name: 'account' })}
+            title={SYNC_LABELS[sync.status]}
+          >
+            ☁️ {sync.user === null ? 'Se connecter' : SYNC_LABELS[sync.status]}
           </button>
         )}
       </header>
@@ -178,6 +204,7 @@ export default function App({ repository }: { repository?: SessionRepository }) 
         <ProgramStepScreen run={screen.run} onContinue={() => continueProgram(screen.run)} onStop={home} />
       )}
       {screen.name === 'program-summary' && <ProgramSummary run={screen.run} onHome={home} />}
+      {screen.name === 'account' && cloud !== null && <AccountPanel auth={cloud.auth} sync={sync} onBack={home} />}
     </main>
   )
 }

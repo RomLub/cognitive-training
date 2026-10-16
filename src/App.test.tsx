@@ -17,6 +17,9 @@ class MemoryRepository implements SessionRepository {
   add(record: SessionRecord): void {
     this.records.push(record)
   }
+  addMany(records: readonly SessionRecord[]): void {
+    for (const r of records) if (!this.records.some((x) => x.id === r.id)) this.records.push(r)
+  }
 }
 
 /** Clicks a button inside the home card of a domain. */
@@ -180,6 +183,7 @@ describe('App calculation flow', () => {
     const broken: SessionRepository = {
       list: () => { throw new Error('boom') },
       add: () => {},
+      addMany: () => {},
     }
     render(<App repository={broken} />)
     expect(screen.getByRole('alert').textContent).toContain('boom')

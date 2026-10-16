@@ -1,0 +1,8 @@
+# Supabase project settings managed from the repo. Only declared properties are pushed
+# (`npx supabase config push --project-ref <ref>`); everything else stays as set in the dashboard.
+project_id = "cognitive-training"
+
+[auth]
+# Where the account-confirmation e-mail link leads.
+site_url = "https://romlub.github.io/cognitive-training/"
+additional_redirect_urls = ["https://romlub.github.io/cognitive-training/", "http://localhost:5173"]

@@ -22,8 +22,26 @@ et l'app est une **PWA** : installable sur l'écran d'accueil, plein écran, uti
 - **Usage quotidien** : publier le build (`npm run build`, dossier `dist/`) sur un hébergement HTTPS ; l'app est
   alors installable et la réponse vocale fonctionne (Chrome Android, Safari iOS).
 
-Les données restent dans le navigateur de chaque appareil : l'historique du téléphone est distinct de celui du PC.
 Les icônes se régénèrent avec `python scripts/generate_icons.py` (Pillow).
+
+## Historique partagé entre appareils (optionnel)
+
+Sans configuration, chaque appareil garde son historique dans son navigateur. Avec un projet **Supabase**, un compte
+(e-mail + mot de passe) synchronise sessions, niveaux et points faibles entre le PC et le téléphone :
+synchro à la connexion, après chaque session et au retour du réseau ; l'app reste utilisable hors ligne.
+
+Mise en place (une fois) :
+1. Créer un projet sur supabase.com (offre gratuite).
+2. SQL Editor → exécuter [`supabase/schema.sql`](supabase/schema.sql) (table, RLS : chacun ne voit que ses sessions).
+3. Authentication → URL Configuration : *Site URL* = l'adresse publiée de l'app ; ajouter `http://localhost:5173`
+   aux *Redirect URLs* (lien de confirmation du compte).
+4. Récupérer l'URL du projet et la clé **publishable** (`sb_publishable_…`, Settings → API Keys), puis :
+   - en local : fichier `.env.local` avec `VITE_SUPABASE_URL=…` et `VITE_SUPABASE_PUBLISHABLE_KEY=…` ;
+   - pour GitHub Pages : variables du dépôt `SUPABASE_URL` et `SUPABASE_PUBLISHABLE_KEY` (Settings → Secrets and
+     variables → Actions → Variables), puis relancer le déploiement.
+
+Ces deux valeurs sont publiques par conception (la sécurité repose sur la RLS) ; ne jamais utiliser la clé *secret*.
+Code : `src/sync/` (interfaces, fusion des historiques, implémentation Supabase, hook de synchro).
 
 ## Exercices
 

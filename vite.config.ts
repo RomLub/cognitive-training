@@ -12,5 +12,7 @@ export default defineConfig({
   preview: { port: 4173, strictPort: true },
   test: {
     environment: 'jsdom',
+    // Never talk to the real Supabase project from tests (.env.local is loaded otherwise); tests inject fakes.
+    env: { VITE_SUPABASE_URL: '', VITE_SUPABASE_PUBLISHABLE_KEY: '' },
   },
 })

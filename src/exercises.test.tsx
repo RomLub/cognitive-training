@@ -14,6 +14,9 @@ class MemoryRepository implements SessionRepository {
   add(record: SessionRecord): void {
     this.records.push(record)
   }
+  addMany(records: readonly SessionRecord[]): void {
+    for (const r of records) if (!this.records.some((x) => x.id === r.id)) this.records.push(r)
+  }
 }
 
 function start(title: string, repo = new MemoryRepository()) {
