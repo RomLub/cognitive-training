@@ -442,13 +442,50 @@ describe('App voice answers', () => {
     expect(lastFeedback()).toMatch(/^✓/)
   })
 
-  it('reports a refused microphone', () => {
+  it('offers a tap to start the microphone when the browser ignores the automatic start (iOS)', () => {
+    /** Like iOS Safari: start() outside a user gesture silently does nothing. */
+    class GestureOnlyRecognition extends FakeRecognition {
+      static ignoreNext = true
+      override start() {
+        if (GestureOnlyRecognition.ignoreNext) {
+          GestureOnlyRecognition.ignoreNext = false
+          return
+        }
+        super.start()
+      }
+    }
+    vi.stubGlobal('SpeechRecognition', GestureOnlyRecognition)
+    localStorage.setItem('cognitive-training:voice', 'on')
+    render(<App repository={new MemoryRepository()} />)
+    clickInCard('Opérations', 'Commencer')
+    expect(screen.queryByText(/À l’écoute/)).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '🎤 Activer le micro' }))
+    expect(screen.getByText(/À l’écoute/)).toBeTruthy()
+    activeRecognition().say(String(solveDisplayedProblem()))
+    expect(lastFeedback()).toMatch(/^✓/)
+  })
+
+  it('shows the tap button again when listening stops and cannot restart', () => {
+    vi.stubGlobal('SpeechRecognition', FakeRecognition)
+    localStorage.setItem('cognitive-training:voice', 'on')
+    render(<App repository={new MemoryRepository()} />)
+    clickInCard('Opérations', 'Commencer')
+    const recognition = activeRecognition()
+    recognition.start = () => {}
+    act(() => recognition.onend?.())
+    expect(screen.getByRole('button', { name: '🎤 Activer le micro' })).toBeTruthy()
+  })
+
+  it('reports a refused microphone and lets the user retry', () => {
     vi.stubGlobal('SpeechRecognition', FakeRecognition)
     localStorage.setItem('cognitive-training:voice', 'on')
     render(<App repository={new MemoryRepository()} />)
     clickInCard('Opérations', 'Commencer')
     act(() => activeRecognition().onerror?.({ error: 'not-allowed' }))
     expect(screen.getByText(/Accès au micro refusé/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }))
+    expect(screen.queryByText(/Accès au micro refusé/)).toBeNull()
+    expect(screen.getByText(/À l’écoute/)).toBeTruthy()
   })
 })
 

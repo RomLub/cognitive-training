@@ -54,6 +54,11 @@ export interface SpeechState {
   listening: boolean
   error: string | null
   lastHeard: string | null
+  /**
+   * Starts the microphone from a tap. iOS Safari ignores start() unless it runs inside a user
+   * gesture, so the automatic start can stay pending there until the user calls this.
+   */
+  activate: () => void
 }
 
 const ERROR_MESSAGES: Readonly<Record<string, string>> = {
@@ -65,8 +70,9 @@ const ERROR_MESSAGES: Readonly<Record<string, string>> = {
 
 /** Continuous French speech recognition, restarted automatically after silences while enabled. */
 export function useSpeechAnswers({ enabled, onResult }: Options): SpeechState {
-  const [state, setState] = useState<SpeechState>({ listening: false, error: null, lastHeard: null })
+  const [state, setState] = useState<Omit<SpeechState, 'activate'>>({ listening: false, error: null, lastHeard: null })
   const onResultRef = useRef(onResult)
+  const activateRef = useRef<() => void>(() => {})
   useEffect(() => {
     onResultRef.current = onResult
   })
@@ -108,6 +114,7 @@ export function useSpeechAnswers({ enabled, onResult }: Options): SpeechState {
     }
     recognition.onstart = () => setState((s) => ({ ...s, listening: true, error: null }))
     recognition.onend = () => {
+      setState((s) => ({ ...s, listening: false }))
       if (!active) return
       try {
         recognition.start()
@@ -117,14 +124,23 @@ export function useSpeechAnswers({ enabled, onResult }: Options): SpeechState {
       }
     }
 
-    try {
-      recognition.start()
-    } catch (err) {
-      // Only thrown when already started; the onstart/onerror handlers report the real state.
-      console.error('Failed to start speech recognition', err)
+    const start = () => {
+      try {
+        recognition.start()
+      } catch (err) {
+        // Only thrown when already started; the onstart/onerror handlers report the real state.
+        console.error('Failed to start speech recognition', err)
+      }
     }
+    activateRef.current = () => {
+      active = true
+      setState((s) => ({ ...s, error: null }))
+      start()
+    }
+    start()
 
     return () => {
+      activateRef.current = () => {}
       active = false
       recognition.onstart = null
       recognition.onend = null
@@ -134,5 +150,5 @@ export function useSpeechAnswers({ enabled, onResult }: Options): SpeechState {
     }
   }, [enabled])
 
-  return state
+  return { ...state, activate: () => activateRef.current() }
 }

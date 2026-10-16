@@ -380,6 +380,11 @@ tr.weak td {
   color: var(--ko);
 }
 
+.voice-status .voice-activate {
+  padding: 6px 14px;
+  font-size: 0.9rem;
+}
+
 /* Home */
 .streak {
   margin: 0 0 8px;
