@@ -17,7 +17,7 @@ const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'del', '0', 'ok'] as 
  * Always-visible digit pad: no field to tap, no phone keyboard popping up. The physical keyboard works too
  * (digits, Backspace, Enter) without clicking anywhere. Validates on its own once the answer has the expected length.
  */
-export function NumericKeypad({ expectedLength, onSubmit, resetKey, maxLength = 12, suffix }: Props) {
+export function NumericKeypad({ expectedLength, onSubmit, resetKey, maxLength = 24, suffix }: Props) {
   const [entry, setEntry] = useState('')
   const [entryFor, setEntryFor] = useState(resetKey)
   // Source of truth for key handling: two keys before a re-render must both count.

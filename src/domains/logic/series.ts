@@ -18,7 +18,7 @@ export function isSeriesRule(value: string): value is SeriesRule {
   return (SERIES_RULES as readonly string[]).includes(value)
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 12
 export const FOCUS_SHARE = 0.5
 
@@ -31,9 +31,7 @@ const LEVEL_RULES: readonly (readonly SeriesRule[])[] = [
   ['geometric', 'alternating', 'second-order'],
   ['alternating', 'second-order', 'fibonacci'],
   ['alternating', 'second-order', 'fibonacci', 'interleaved'],
-  SERIES_RULES,
-  SERIES_RULES,
-  SERIES_RULES,
+  ...Array.from({ length: 13 }, () => SERIES_RULES),
 ]
 
 export function rulesForLevel(level: number): readonly SeriesRule[] {
@@ -52,13 +50,17 @@ export interface SeriesTrial {
   explanation: string
 }
 
-const VISIBLE_TERMS = 5
+/** Visible terms: 5, then only 4 from level 15 (less evidence to infer the rule). */
+function visibleTerms(level: number): number {
+  return level >= 15 ? 4 : 5
+}
 
 function signed(n: number): string {
   return n >= 0 ? `+${n}` : `−${-n}`
 }
 
 function build(rule: SeriesRule, level: number, rng: Rng): Omit<SeriesTrial, 'level' | 'rule'> {
+  const VISIBLE_TERMS = visibleTerms(level)
   switch (rule) {
     case 'arithmetic': {
       const step = randInt(rng, 1, 2 + level) * (level >= 2 && rng() < 0.4 ? -1 : 1)
@@ -68,7 +70,7 @@ function build(rule: SeriesRule, level: number, rng: Rng): Omit<SeriesTrial, 'le
       return { terms: terms.slice(0, -1), answer: terms.at(-1)!, explanation: `${signed(step)} à chaque fois` }
     }
     case 'geometric': {
-      const ratio = level >= 8 ? randInt(rng, 2, 4) : randInt(rng, 2, 3)
+      const ratio = level >= 15 ? randInt(rng, 3, 5) : level >= 8 ? randInt(rng, 2, 4) : randInt(rng, 2, 3)
       const start = randInt(rng, 1, 2 + Math.floor(level / 2))
       const terms = Array.from({ length: VISIBLE_TERMS + 1 }, (_, i) => start * ratio ** i)
       return { terms: terms.slice(0, -1), answer: terms.at(-1)!, explanation: `×${ratio} à chaque fois` }

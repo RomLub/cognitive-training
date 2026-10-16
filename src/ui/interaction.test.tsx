@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from '../App'
 import type { SessionRecord } from '../core/types'
@@ -91,6 +91,7 @@ describe('session screen', () => {
   it('shows a combo after consecutive right answers and resets it on a mistake', () => {
     render(<App repository={new MemoryRepository()} />)
     fireEvent.click(within(screen.getByRole('article', { name: 'Opérations' })).getByRole('button', { name: 'Commencer' }))
+    fireEvent.click(screen.getByRole('button', { name: 'C’est parti !' }))
     for (const key of String(solve())) press(key)
     expect(screen.queryByTitle('Bonnes réponses d’affilée')).toBeNull()
     for (const key of String(solve())) press(key)
@@ -104,6 +105,28 @@ describe('session screen', () => {
   it('keeps the focus on word fields so typing works without clicking', () => {
     render(<App repository={new MemoryRepository()} />)
     fireEvent.click(within(screen.getByRole('article', { name: 'Anagrammes' })).getByRole('button', { name: 'Commencer' }))
+    fireEvent.click(screen.getByRole('button', { name: 'C’est parti !' }))
     expect(document.activeElement).toBe(screen.getByLabelText('Réponse'))
+  })
+
+  it('shows the rules first and starts nothing until the user is ready', () => {
+    vi.useFakeTimers()
+    render(<App repository={new MemoryRepository()} />)
+    fireEvent.click(within(screen.getByRole('article', { name: 'Stroop' })).getByRole('button', { name: 'Commencer' }))
+    expect(screen.getByText(/donne la couleur de l’encre, pas le mot/)).toBeTruthy()
+    expect(screen.getByText(/Niveau 1\/20 · 24 essais/)).toBeTruthy()
+    // The deadline would have expired several times if the exercise were running.
+    act(() => vi.advanceTimersByTime(10_000))
+    expect(screen.queryByTestId('feedback')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'C’est parti !' }))
+    expect(screen.getByText('Essai 1/24')).toBeTruthy()
+    vi.useRealTimers()
+  })
+
+  it('goes back home from the instruction screen', () => {
+    render(<App repository={new MemoryRepository()} />)
+    fireEvent.click(within(screen.getByRole('article', { name: 'Matrices' })).getByRole('button', { name: 'Commencer' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Retour' }))
+    expect(screen.getByText('Programmes')).toBeTruthy()
   })
 })

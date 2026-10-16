@@ -14,7 +14,7 @@ export function isSymbolSet(value: string): value is SymbolSet {
   return value === 'distinct' || value === 'similar'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 30
 export const SIMILAR_FROM_LEVEL = 6
 
@@ -34,10 +34,10 @@ export function symbolSetFor(level: number): SymbolSet {
   return level >= SIMILAR_FROM_LEVEL ? 'similar' : 'distinct'
 }
 
-/** Deadline: 3.5 s at level 1 down to 1.25 s at level 10. */
+/** Deadline: 3.5 s at level 1 down to 1.25 s at level 10, then 1.15 s down to 0.745 s at level 20. */
 export function timeLimitMs(level: number): number {
   checkLevel(level)
-  return 3500 - (level - 1) * 250
+  return level <= 10 ? 3500 - (level - 1) * 250 : 1150 - (level - 11) * 45
 }
 
 /** One key per session: for each set, symbols[digit - 1]. */

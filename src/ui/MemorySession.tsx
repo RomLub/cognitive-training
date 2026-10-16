@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { SPAN_MODE_LABELS } from '../domains/memory/labels'
-import { DIGIT_MS, GAP_MS, generateTrial, LEVEL_BOUNDS, type SpanMode } from '../domains/memory/span'
+import { GAP_MS, generateTrial, LEVEL_BOUNDS, type SpanMode } from '../domains/memory/span'
 import { parseDigitSequence } from '../voice/parse'
 import { NumericKeypad } from './NumericKeypad'
 import { SessionFrame, type ExerciseProps } from './SessionFrame'
@@ -23,10 +23,10 @@ export function MemorySession({ startLevel, focus, length, voice, onFinish, onQu
 
   // Plays the sequence one digit at a time, then opens the answer field.
   useEffect(() => {
-    const step = DIGIT_MS + GAP_MS
+    const step = trial.digitMs + GAP_MS
     const timers = trial.digits.flatMap((digit, i) => [
       setTimeout(() => setVisibleDigit(digit), LEAD_MS + i * step),
-      setTimeout(() => setVisibleDigit(null), LEAD_MS + i * step + DIGIT_MS),
+      setTimeout(() => setVisibleDigit(null), LEAD_MS + i * step + trial.digitMs),
     ])
     timers.push(
       setTimeout(() => {

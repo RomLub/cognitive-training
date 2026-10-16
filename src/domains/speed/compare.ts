@@ -11,7 +11,7 @@ export function isPairKind(value: string): value is PairKind {
   return value === 'same' || value === 'different'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 24
 export const FOCUS_SHARE = 0.5
 
@@ -25,23 +25,28 @@ function checkLevel(level: number): void {
   }
 }
 
-/** String length: 3 at level 1 up to 12 at level 10. */
+/** Look-alike characters used at the top levels (O/0/Q/D, 1/I/7, 5/S, 8/B, 2/Z). */
+const LOOKALIKES = 'O0QD1I75S8B2Z'
+
+/** String length: 3 at level 1 up to 12 at level 10, then 14 at most (it must fit a phone screen). */
 export function pairLength(level: number): number {
   checkLevel(level)
-  return level + 2
+  return level <= 10 ? level + 2 : Math.min(14, 12 + Math.floor((level - 11) / 4))
 }
 
-/** Charset: digits (1-3), letters (4-6), mixed (7-10). */
+/** Charset: digits (1-3), letters (4-6), mixed (7-14), look-alike characters (15-20). */
 export function charsetFor(level: number): string {
   checkLevel(level)
   if (level <= 3) return DIGITS
   if (level <= 6) return LETTERS
-  return DIGITS + LETTERS
+  if (level <= 14) return DIGITS + LETTERS
+  return LOOKALIKES
 }
 
 /** Deadline grows with length but each character gets less time as the level rises. */
 export function timeLimitMs(level: number): number {
-  return 500 + pairLength(level) * (900 - 50 * (level - 1))
+  const perChar = level <= 10 ? 900 - 50 * (level - 1) : 430 - 15 * (level - 11)
+  return 500 + pairLength(level) * perChar
 }
 
 export interface PairTrial {

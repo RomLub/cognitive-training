@@ -29,7 +29,7 @@ describe('mental rotation', () => {
 
   it('mirrors only on mirror trials, with a level angle', () => {
     const rng = seededRng(8)
-    for (let level = 1; level <= 10; level++) {
+    for (let level = 1; level <= 20; level++) {
       for (let i = 0; i < 30; i++) {
         const t = generateTrial(level, rng)
         expect(t.cells).toHaveLength(rotationSpec(level).cells)

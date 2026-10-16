@@ -16,7 +16,7 @@ export function isListKind(value: string): value is ListKind {
   return value === 'concrete' || value === 'abstract'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 3
 export const FOCUS_SHARE = 0.5
 /** A list counts as recalled at 70 % of its words. */
@@ -39,6 +39,16 @@ const LEVELS: readonly ListSpec[] = [
   { words: 12, showMs: 1400, delayMs: 20_000 },
   { words: 13, showMs: 1300, delayMs: 30_000 },
   { words: 15, showMs: 1200, delayMs: 30_000 },
+  { words: 16, showMs: 1150, delayMs: 35_000 },
+  { words: 17, showMs: 1100, delayMs: 35_000 },
+  { words: 18, showMs: 1050, delayMs: 40_000 },
+  { words: 18, showMs: 1000, delayMs: 40_000 },
+  { words: 19, showMs: 950, delayMs: 45_000 },
+  { words: 20, showMs: 900, delayMs: 45_000 },
+  { words: 21, showMs: 900, delayMs: 50_000 },
+  { words: 22, showMs: 850, delayMs: 50_000 },
+  { words: 23, showMs: 850, delayMs: 55_000 },
+  { words: 24, showMs: 800, delayMs: 60_000 },
 ]
 
 export function listSpec(level: number): ListSpec {

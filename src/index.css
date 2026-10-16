@@ -1971,3 +1971,67 @@ button.big {
   color: #5b3fd6;
   box-shadow: 0 4px 0 #3d2a9e;
 }
+
+/* ---------- Instruction screen ---------- */
+.intro-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.intro-head h2 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.intro-domain {
+  margin: 0;
+  font-weight: 700;
+}
+
+.intro-card {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin: 20px 0 12px;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-left: 6px solid var(--domain, var(--accent));
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 0 var(--border);
+}
+
+.intro-card .mascot {
+  flex-shrink: 0;
+}
+
+.intro-rules {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.intro-meta {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.intro-actions {
+  align-items: center;
+  gap: 18px;
+}
+
+.next-step .intro-rules {
+  margin-top: 8px;
+  font-size: 0.98rem;
+}
+
+@media (max-width: 600px) {
+  .intro-actions button.big {
+    flex: 1;
+  }
+}

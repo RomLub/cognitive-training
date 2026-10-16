@@ -34,7 +34,7 @@ describe('syllogism validity', () => {
 describe('syllogism generation', () => {
   it('labels each trial with its computed validity and mixes both kinds', () => {
     const rng = seededRng(12)
-    for (let level = 1; level <= 10; level++) {
+    for (let level = 1; level <= 20; level++) {
       const kinds = new Set<string>()
       for (let i = 0; i < 20; i++) {
         const t = generateTrial(level, rng)
@@ -44,5 +44,6 @@ describe('syllogism generation', () => {
       }
       expect(kinds.size).toBe(2)
     }
-  })
+    // 4-term syllogisms are checked against 32 768 models each: ~30 ms per trial.
+  }, 30_000)
 })

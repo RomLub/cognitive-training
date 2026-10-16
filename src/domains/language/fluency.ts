@@ -16,10 +16,15 @@ export function isFluencyKind(value: string): value is FluencyKind {
   return value === 'semantic' || value === 'phonemic'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 2
 export const FOCUS_SHARE = 0.5
 export const ROUND_MS = 60_000
+
+/** 60 s per round up to level 10, then 1.5 s less per level (45 s at level 20). */
+export function roundMs(level: number): number {
+  return level <= 10 ? ROUND_MS : ROUND_MS - (level - 10) * 1_500
+}
 export const MIN_PHONEMIC_LENGTH = 3
 
 /** Words to reach in 60 s: semantic 8 → 26; phonemic (harder) about 70 % of that. */
@@ -27,7 +32,8 @@ export function fluencyTarget(level: number, kind: FluencyKind): number {
   if (!Number.isInteger(level) || level < LEVEL_BOUNDS.min || level > LEVEL_BOUNDS.max) {
     throw new Error(`Unknown fluency level: ${level}`)
   }
-  const semantic = 8 + 2 * (level - 1)
+  // From level 10 the target stays (26 words is already elite): the round gets shorter instead.
+  const semantic = 8 + 2 * (Math.min(level, 10) - 1)
   return kind === 'semantic' ? semantic : Math.round(semantic * 0.7)
 }
 
@@ -54,12 +60,12 @@ export function generateRound(level: number, rng: Rng = Math.random, focus: Flue
       accepted: new Set(category.words.map(normalizeWord)),
       letter: null,
       target,
-      durationMs: ROUND_MS,
+      durationMs: roundMs(level),
       level,
     }
   }
   const letter = pick(rng, FLUENCY_LETTERS)
-  return { kind, prompt: `des mots commençant par ${letter}`, accepted: null, letter, target, durationMs: ROUND_MS, level }
+  return { kind, prompt: `des mots commençant par ${letter}`, accepted: null, letter, target, durationMs: roundMs(level), level }
 }
 
 export type WordVerdict = 'ok' | 'duplicate' | 'unknown' | 'wrong-letter' | 'too-short'

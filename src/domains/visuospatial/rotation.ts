@@ -15,7 +15,7 @@ export function isRotationKind(value: string): value is RotationKind {
   return value === 'same' || value === 'mirror'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 20
 export const FOCUS_SHARE = 0.5
 
@@ -41,6 +41,16 @@ const LEVELS: readonly RotationSpec[] = [
   { cells: 8, angles: ANY, timeLimitMs: 5000 },
   { cells: 8, angles: ANY, timeLimitMs: 4000 },
   { cells: 9, angles: ANY, timeLimitMs: 3500 },
+  { cells: 9, angles: ANY, timeLimitMs: 3300 },
+  { cells: 9, angles: ANY, timeLimitMs: 3100 },
+  { cells: 10, angles: ANY, timeLimitMs: 3000 },
+  { cells: 10, angles: ANY, timeLimitMs: 2800 },
+  { cells: 10, angles: ANY, timeLimitMs: 2600 },
+  { cells: 10, angles: ANY, timeLimitMs: 2400 },
+  { cells: 10, angles: ANY, timeLimitMs: 2200 },
+  { cells: 10, angles: ANY, timeLimitMs: 2000 },
+  { cells: 10, angles: ANY, timeLimitMs: 1900 },
+  { cells: 10, angles: ANY, timeLimitMs: 1800 },
 ]
 
 export function rotationSpec(level: number): RotationSpec {

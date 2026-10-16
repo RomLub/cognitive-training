@@ -11,7 +11,7 @@ export function isEstimationKind(value: string): value is EstimationKind {
   return (ESTIMATION_KINDS as readonly string[]).includes(value)
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 15
 export const FOCUS_SHARE = 0.5
 export const OPTION_COUNT = 4
@@ -22,21 +22,27 @@ function checkLevel(level: number): void {
   }
 }
 
-/** Deadline: 7 s at level 1 down to 3 s at level 10. */
+/** Deadline: 7 s at level 1 down to 3 s at level 10, then 2.9 s down to 1.55 s at level 20. */
 export function timeLimitMs(level: number): number {
   checkLevel(level)
-  return 7000 - Math.round(((level - 1) * 4000) / 9)
+  if (level <= 10) return 7000 - Math.round(((level - 1) * 4000) / 9)
+  return 2900 - (level - 11) * 150
 }
 
-/** How far the wrong options are from the right one: ×10 / ÷10 at first, ±25 % at the top. */
+/** How far the wrong options are from the right one: ×10 / ÷10 at first, ±10 % at the top. */
 export function distractorFactors(level: number): readonly number[] {
   checkLevel(level)
   if (level <= 2) return [0.1, 10, 0.01, 100]
   if (level <= 4) return [0.1, 10, 0.5, 2]
   if (level <= 6) return [0.5, 2, 0.7, 1.5]
   if (level <= 8) return [0.6, 1.5, 0.75, 1.35]
-  return [0.75, 1.25, 0.8, 1.35]
+  if (level <= 10) return [0.75, 1.25, 0.8, 1.35]
+  if (level <= 14) return [0.8, 1.2, 0.85, 1.15]
+  return [0.85, 1.15, 0.9, 1.1]
 }
+
+/** Used when close factors collapse onto the same rounded value. */
+const FALLBACK_FACTORS = [0.7, 1.3, 0.6, 1.5, 0.5, 2]
 
 /** Rounds to 2 significant digits, the precision of the options. */
 export function roundSignificant(n: number): number {
@@ -56,7 +62,7 @@ export interface EstimationTrial {
 }
 
 function magnitudeFor(level: number): number {
-  return level <= 3 ? 99 : level <= 6 ? 999 : 9999
+  return level <= 3 ? 99 : level <= 6 ? 999 : level <= 14 ? 9999 : 99999
 }
 
 function build(kind: EstimationKind, level: number, rng: Rng): { prompt: string; exact: number } {
@@ -90,7 +96,7 @@ export function generateTrial(level: number, rng: Rng = Math.random, focus: Esti
   const { prompt, exact } = build(kind, level, rng)
   const right = roundSignificant(exact)
   const values = [right]
-  for (const factor of distractorFactors(level)) {
+  for (const factor of [...distractorFactors(level), ...FALLBACK_FACTORS]) {
     const candidate = roundSignificant(right * factor)
     if (candidate > 0 && !values.includes(candidate)) values.push(candidate)
     if (values.length === OPTION_COUNT) break

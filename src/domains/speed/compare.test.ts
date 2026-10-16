@@ -38,6 +38,6 @@ describe('pair comparison', () => {
 
   it('rejects unknown levels', () => {
     expect(() => generateTrial(0)).toThrow()
-    expect(() => pairLength(11)).toThrow()
+    expect(() => pairLength(21)).toThrow()
   })
 })

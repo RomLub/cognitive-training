@@ -9,9 +9,9 @@ describe('word banks', () => {
   it('have no duplicates once normalized, and enough words for the hardest level', () => {
     for (const bank of [CONCRETE_NOUNS, ABSTRACT_NOUNS]) {
       expect(new Set(bank.map(normalizeWord)).size).toBe(bank.length)
-      expect(bank.length).toBeGreaterThanOrEqual(wordList.listSpec(10).words * 4)
+      expect(bank.length).toBeGreaterThanOrEqual(wordList.listSpec(wordList.LEVEL_BOUNDS.max).words * 3)
     }
-    expect(RELATED_PAIRS.length).toBeGreaterThanOrEqual(pairs.pairsSpec(10).pairs * 4)
+    expect(RELATED_PAIRS.length).toBeGreaterThanOrEqual(pairs.pairsSpec(pairs.LEVEL_BOUNDS.max).pairs * 3)
   })
 })
 
@@ -32,7 +32,7 @@ describe('text normalization', () => {
 describe('word list recall', () => {
   it('draws distinct words of the level size and kind', () => {
     const rng = seededRng(2)
-    for (let level = 1; level <= 10; level++) {
+    for (let level = 1; level <= 20; level++) {
       const t = wordList.generateList(level, rng)
       expect(t.words).toHaveLength(wordList.listSpec(level).words)
       expect(new Set(t.words).size).toBe(t.words.length)
@@ -56,7 +56,7 @@ describe('word list recall', () => {
 describe('word pairs', () => {
   it('builds the right number of pairs and a full shuffled test order', () => {
     const rng = seededRng(3)
-    for (let level = 1; level <= 10; level++) {
+    for (let level = 1; level <= 20; level++) {
       const t = pairs.generatePairs(level, rng)
       expect(t.pairs).toHaveLength(pairs.pairsSpec(level).pairs)
       expect(t.testOrder.toSorted((a, b) => a - b)).toEqual(t.pairs.map((_, i) => i))

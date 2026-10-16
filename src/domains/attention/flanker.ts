@@ -11,7 +11,7 @@ export function isFlankerKind(value: string): value is FlankerKind {
   return value === 'congruent' || value === 'incongruent'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 30
 export const FOCUS_SHARE = 0.5
 
@@ -21,21 +21,21 @@ function checkLevel(level: number): void {
   }
 }
 
-/** Deadline: 2.5 s at level 1 down to 0.7 s at level 10. */
+/** Deadline: 2.5 s at level 1 down to 0.7 s at level 10, then 0.68 s down to 0.455 s at level 20. */
 export function timeLimitMs(level: number): number {
   checkLevel(level)
-  return 2500 - (level - 1) * 200
+  return level <= 10 ? 2500 - (level - 1) * 200 : 680 - (level - 11) * 25
 }
 
 export function incongruentShare(level: number): number {
   checkLevel(level)
-  return 0.3 + (level - 1) * 0.045
+  return Math.min(0.8, 0.3 + (level - 1) * 0.045)
 }
 
-/** Flankers on each side: 2 up to level 5, then 3. */
+/** Flankers on each side: 2 up to level 5, 3 up to level 15, then 4. */
 export function flankersPerSide(level: number): number {
   checkLevel(level)
-  return level <= 5 ? 2 : 3
+  return level <= 5 ? 2 : level <= 15 ? 3 : 4
 }
 
 export interface FlankerTrial {

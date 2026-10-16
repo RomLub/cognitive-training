@@ -72,7 +72,7 @@ Code : `src/sync/` (interfaces, fusion des historiques, implémentation Supabase
 | Visuo-spatial | Rotation mentale | même forme tournée, ou reflet en miroir ? | même / miroir |
 
 Tous les exercices partagent :
-- **Niveaux adaptatifs** (10, ou 20 pour le Stroop) : 3 réussites d'affilée → niveau +1, 2 échecs d'affilée → niveau −1 ;
+- **20 niveaux adaptatifs** par exercice (les niveaux 11 à 20 durcissent les nombres, les délais ou les leurres) : 3 réussites d'affilée → niveau +1, 2 échecs d'affilée → niveau −1 ;
   chaque exercice reprend à son dernier niveau. Une session terminée au niveau maximal est signalée.
 - **Points faibles** : stats par catégorie sur les 10 dernières sessions ; la catégorie la moins réussie
   (au moins 8 réponses) est signalée, et les sessions suivantes insistent dessus (50 % des tirages).
@@ -88,6 +88,8 @@ Tous les exercices partagent :
   combo de bonnes réponses d'affilée, retours colorés avec Neuro la mascotte, sons (désactivables, 🔊 en haut),
   écran de fin festif. Les XP se calculent à partir de l'historique : rien de plus à stocker ni à synchroniser.
 - Animations seulement en réponse à une action, désactivées si le système demande de réduire les animations.
+
+Chaque exercice commence par un **écran de consigne** : rien ne démarre (ni chrono) avant « C'est parti ! ».
 
 ## Progrès
 

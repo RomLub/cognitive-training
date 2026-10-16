@@ -5,6 +5,7 @@ import { getExercise } from './exercises'
 import { sessionXp } from '../core/xp'
 import { Celebration } from './Celebration'
 import { formatPercent, formatSeconds } from './format'
+import { instructionsFor } from './instructions'
 
 export interface ProgramRun {
   title: string
@@ -42,7 +43,11 @@ export function ProgramStepScreen({ run, onContinue, onStop }: { run: ProgramRun
         <p>
           Étape {run.completed.length + 1}/{run.steps.length} : <strong>{config.title}</strong>
         </p>
-        <p className="muted">{config.description}</p>
+        <ul className="intro-rules">
+          {instructionsFor(config.id).map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
       </div>
       <div className="actions">
         <button type="button" onClick={onContinue} autoFocus>

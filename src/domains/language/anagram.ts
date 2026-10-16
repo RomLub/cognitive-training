@@ -13,13 +13,14 @@ export function isAnagramKind(value: string): value is AnagramKind {
   return value === 'concrete' || value === 'abstract'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 10
 export const FOCUS_SHARE = 0.5
 
 /** Word length range per level (letters, accents removed). */
 const LENGTHS: readonly (readonly [number, number])[] = [
   [4, 5], [5, 5], [5, 6], [6, 6], [6, 7], [7, 7], [7, 8], [8, 8], [8, 9], [9, 11],
+  [8, 10], [8, 10], [9, 10], [9, 10], [9, 11], [9, 11], [9, 11], [9, 11], [9, 11], [9, 11],
 ]
 
 export function lengthRange(level: number): readonly [number, number] {
@@ -31,7 +32,8 @@ export function lengthRange(level: number): readonly [number, number] {
 /** 45 s at level 1 down to 25 s at level 10. */
 export function timeLimitMs(level: number): number {
   lengthRange(level)
-  return 45_000 - Math.round(((level - 1) * 20_000) / 9)
+  // 45 s at level 1, 25 s at level 10, then 24 s down to 12.3 s at level 20.
+  return level <= 10 ? 45_000 - Math.round(((level - 1) * 20_000) / 9) : 24_000 - (level - 11) * 1_300
 }
 
 /** Plain uppercase letters of a word ("Éléphant" → "ELEPHANT"). */

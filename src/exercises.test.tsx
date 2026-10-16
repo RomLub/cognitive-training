@@ -5,6 +5,7 @@ import type { SessionRecord } from './core/types'
 import { applyStep, type ChainStep } from './domains/calculation/chain'
 import type { SessionRepository } from './storage/sessionRepository'
 import { EXERCISES } from './ui/exercises'
+import { instructionsFor } from './ui/instructions'
 
 /** Types an answer on the keypad through the physical keyboard (auto-validates at full length), then Enter. */
 function typeAnswer(value: string | number) {
@@ -29,6 +30,7 @@ function start(title: string, repo = new MemoryRepository()) {
   render(<App repository={repo} />)
   const card = screen.getByRole('article', { name: title })
   fireEvent.click(within(card).getByRole('button', { name: 'Commencer' }))
+  fireEvent.click(screen.getByRole('button', { name: 'C’est parti !' }))
   return repo
 }
 
@@ -61,6 +63,13 @@ describe('every exercise', () => {
     expect(screen.getByRole('button', { name: 'Abandonner' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Abandonner' }))
     expect(screen.getByText('Programmes')).toBeTruthy()
+  })
+
+  it('has instructions and 20 levels', () => {
+    for (const e of EXERCISES) {
+      expect(instructionsFor(e.id).length, e.id).toBeGreaterThan(0)
+      expect(e.bounds.max, e.id).toBe(20)
+    }
   })
 
   it('has a unique id and at least one category', () => {
@@ -271,7 +280,7 @@ describe('history migration', () => {
       startLevel: 1, endLevel: 7, items: 20, correct: 20, avgResponseMs: 3000,
     })
     render(<App repository={repo} />)
-    expect(within(screen.getByRole('article', { name: 'Opérations' })).getByText(/Niveau 7\/10/)).toBeTruthy()
+    expect(within(screen.getByRole('article', { name: 'Opérations' })).getByText(/Niveau 7\/20/)).toBeTruthy()
     expect(within(screen.getByRole('article', { name: 'Calcul en chaîne' })).queryByText(/Niveau/)).toBeNull()
   })
 })

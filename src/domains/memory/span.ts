@@ -14,21 +14,34 @@ export function isSpanMode(value: string): value is SpanMode {
   return value === 'forward' || value === 'backward'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 
 /** Trials per session; each trial lasts longer than a calculation item. */
 export const SESSION_LENGTH = 12
 
-/** Display timing per digit. */
-export const DIGIT_MS = 800
+/** Blank between two digits. */
 export const GAP_MS = 250
 
-/** Sequence length: forward 3→12 digits, backward one shorter since reversing is harder. */
-export function spanLength(level: number, mode: SpanMode): number {
+function checkLevel(level: number): void {
   if (!Number.isInteger(level) || level < LEVEL_BOUNDS.min || level > LEVEL_BOUNDS.max) {
     throw new Error(`Unknown memory level: ${level}`)
   }
-  return mode === 'forward' ? level + 2 : level + 1
+}
+
+/**
+ * Sequence length: forward 3 → 12 digits up to level 10, then +1 every two levels (17 at level 20) since
+ * human span tops out; backward is one shorter since reversing is harder.
+ */
+export function spanLength(level: number, mode: SpanMode): number {
+  checkLevel(level)
+  const forward = level <= 10 ? level + 2 : 12 + Math.ceil((level - 10) / 2)
+  return mode === 'forward' ? forward : forward - 1
+}
+
+/** How long each digit stays on screen: 0.8 s up to level 10, then down to 0.4 s at level 20. */
+export function digitMs(level: number): number {
+  checkLevel(level)
+  return level <= 10 ? 800 : 800 - (level - 10) * 40
 }
 
 export interface SpanTrial {
@@ -37,6 +50,7 @@ export interface SpanTrial {
   level: number
   /** Expected answer as typed by the user. */
   answer: string
+  digitMs: number
 }
 
 /** Share of trials forced onto the focus mode; the rest are a fair coin flip. */
@@ -52,7 +66,7 @@ export function generateTrial(level: number, rng: Rng = Math.random, focus: Span
     if (d !== digits.at(-1)) digits.push(d)
   }
   const ordered = mode === 'forward' ? digits : digits.toReversed()
-  return { digits, mode, level, answer: ordered.join('') }
+  return { digits, mode, level, answer: ordered.join(''), digitMs: digitMs(level) }
 }
 
 /** Keeps digits only, so "3 8 1" and "381" are both accepted. Returns null when nothing usable was typed. */

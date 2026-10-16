@@ -19,17 +19,23 @@ export function isTowerKind(value: string): value is 'plan' {
   return value === 'plan'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 6
 /** Moves allowed beyond the minimum before the problem is counted as failed. */
 export const EXTRA_MOVES_ALLOWED = 3
 
-const MIN_MOVES = [2, 3, 3, 4, 4, 5, 5, 6, 6, 7]
+const MIN_MOVES = [2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8]
 
 export function minMovesFor(level: number): number {
   const moves = MIN_MOVES[level - 1]
   if (!Number.isInteger(level) || moves === undefined) throw new Error(`Unknown tower level: ${level}`)
   return moves
+}
+
+/** No time limit up to level 12, then 60 s per problem down to 25 s at level 20. */
+export function towerTimeLimitMs(level: number): number | null {
+  minMovesFor(level)
+  return level <= 12 ? null : 60_000 - (level - 13) * 5_000
 }
 
 export function stateKey(state: TowerState): string {

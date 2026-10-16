@@ -17,7 +17,7 @@ export function isSyllogismKind(value: string): value is SyllogismKind {
   return value === 'valid' || value === 'invalid'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 10
 export const FOCUS_SHARE = 0.5
 
@@ -51,7 +51,14 @@ const LEVELS: readonly SyllogismSpec[] = [
   { terms: 4, quantifiers: ['all', 'none', 'some'] },
   { terms: 4, quantifiers: ['all', 'none', 'some', 'some-not'] },
   { terms: 4, quantifiers: ['all', 'none', 'some', 'some-not'] },
+  ...Array.from({ length: 10 }, (): SyllogismSpec => ({ terms: 4, quantifiers: ['all', 'none', 'some', 'some-not'] })),
 ]
+
+/** No time limit up to level 10, then 40 s per syllogism down to 14.8 s at level 20. */
+export function syllogismTimeLimitMs(level: number): number | null {
+  syllogismSpec(level)
+  return level <= 10 ? null : 40_000 - (level - 11) * 2_800
+}
 
 export function syllogismSpec(level: number): SyllogismSpec {
   const spec = LEVELS[level - 1]

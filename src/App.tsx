@@ -8,6 +8,7 @@ import { cloudFromEnv } from './sync/supabaseCloud'
 import { SYNC_LABELS } from './sync/syncLabels'
 import { useCloudSync } from './sync/useCloudSync'
 import { AccountPanel } from './ui/AccountPanel'
+import { ExerciseIntro } from './ui/ExerciseIntro'
 import { loadSoundPreference, saveSoundPreference } from './ui/sound'
 import { SoundContext } from './ui/soundContext'
 import { analyzeExercise, getExercise } from './ui/exercises'
@@ -29,6 +30,8 @@ type Screen =
       key: number
       /** Set when the session is a step of a program. */
       run: ProgramRun | null
+      /** False while the instruction screen is shown; the exercise (and its clock) starts on "C'est parti !". */
+      started: boolean
     }
   | { name: 'results'; exercise: string; record: SessionRecord }
   | { name: 'progress'; exercise: string }
@@ -107,6 +110,8 @@ export default function App({ repository, cloud: cloudProp }: AppProps) {
       length,
       key: Date.now(),
       run,
+      // Program steps already show the rules on the step screen.
+      started: run !== null,
     })
   }
 
@@ -198,7 +203,17 @@ export default function App({ repository, cloud: cloudProp }: AppProps) {
           onStartProgram={startProgram}
         />
       )}
-      {screen.name === 'session' && (() => {
+      {screen.name === 'session' && !screen.started && (
+        <ExerciseIntro
+          config={getExercise(screen.exercise)}
+          startLevel={screen.startLevel}
+          focusLabel={screen.focus === null ? null : (getExercise(screen.exercise).labels[screen.focus] ?? screen.focus)}
+          length={screen.length}
+          onStart={() => setScreen({ ...screen, started: true, key: Date.now() })}
+          onBack={home}
+        />
+      )}
+      {screen.name === 'session' && screen.started && (() => {
         const { Session } = getExercise(screen.exercise)
         return (
           <Session

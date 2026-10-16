@@ -141,7 +141,7 @@ describe('shared history', () => {
 
     // The home screen reflects the merged history (latest session: level 7 from the phone).
     fireEvent.click(screen.getByRole('button', { name: /Accueil/ }))
-    expect(within(screen.getByRole('article', { name: 'Opérations' })).getByText(/Niveau 7\/10 · 2 sessions/)).toBeTruthy()
+    expect(within(screen.getByRole('article', { name: 'Opérations' })).getByText(/Niveau 7\/20 · 2 sessions/)).toBeTruthy()
   })
 
   it('uploads a session as soon as it is finished', async () => {
@@ -152,6 +152,7 @@ describe('shared history', () => {
     fireEvent.click(screen.getByRole('button', { name: /Accueil/ }))
 
     fireEvent.click(within(screen.getByRole('article', { name: 'Opérations' })).getByRole('button', { name: 'Commencer' }))
+    fireEvent.click(screen.getByRole('button', { name: 'C’est parti !' }))
     for (let i = 0; i < SESSION_LENGTH; i++) typeAnswer(solveDisplayedProblem())
     await waitFor(() => expect(remote.records).toHaveLength(1))
     expect(remote.records[0]!.exercise).toBe('arithmetic')

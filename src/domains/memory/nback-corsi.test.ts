@@ -33,7 +33,8 @@ describe('n-back', () => {
   it('raises n with the level', () => {
     expect(nback.nbackSpec(1).n).toBe(1)
     expect(nback.nbackSpec(10).n).toBe(4)
-    expect(() => nback.nbackSpec(11)).toThrow()
+    expect(nback.nbackSpec(20).n).toBe(7)
+    expect(() => nback.nbackSpec(21)).toThrow()
   })
 })
 

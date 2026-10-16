@@ -14,7 +14,7 @@ export function isNBackModality(value: string): value is NBackModality {
   return value === 'letters' || value === 'positions'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 5
 export const FOCUS_SHARE = 0.5
 /** Scored stimuli per block (the first n cannot match). */
@@ -42,6 +42,16 @@ const LEVELS: readonly NBackSpec[] = [
   { n: 3, intervalMs: 1700 },
   { n: 4, intervalMs: 2200 },
   { n: 4, intervalMs: 1800 },
+  { n: 4, intervalMs: 1600 },
+  { n: 4, intervalMs: 1400 },
+  { n: 5, intervalMs: 2200 },
+  { n: 5, intervalMs: 1900 },
+  { n: 5, intervalMs: 1600 },
+  { n: 5, intervalMs: 1400 },
+  { n: 6, intervalMs: 2000 },
+  { n: 6, intervalMs: 1700 },
+  { n: 6, intervalMs: 1500 },
+  { n: 7, intervalMs: 1800 },
 ]
 
 export function nbackSpec(level: number): NBackSpec {

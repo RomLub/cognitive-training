@@ -14,7 +14,7 @@ export function isGoKind(value: string): value is GoKind {
   return value === 'go' || value === 'nogo'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 40
 export const FOCUS_SHARE = 0.5
 export const NOGO_DIGIT = 3
@@ -25,16 +25,16 @@ function checkLevel(level: number): void {
   }
 }
 
-/** Time to respond: 1.5 s at level 1 down to 0.6 s at level 10. */
+/** Time to respond: 1.5 s at level 1 down to 0.6 s at level 10, then 0.58 s down to 0.4 s at level 20. */
 export function intervalMs(level: number): number {
   checkLevel(level)
-  return 1500 - (level - 1) * 100
+  return level <= 10 ? 1500 - (level - 1) * 100 : 580 - (level - 11) * 20
 }
 
-/** No-go share: 30 % at level 1 down to ~12 % at level 10 (rare no-gos are harder to catch). */
+/** No-go share: 30 % at level 1 down to 12 % at level 10, then 8 % at level 20 (rare no-gos are harder to catch). */
 export function nogoShare(level: number): number {
   checkLevel(level)
-  return 0.3 - (level - 1) * 0.02
+  return level <= 10 ? 0.3 - (level - 1) * 0.02 : 0.12 - (level - 10) * 0.004
 }
 
 export interface GoTrial {

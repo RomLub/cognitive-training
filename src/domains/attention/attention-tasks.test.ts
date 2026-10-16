@@ -7,7 +7,7 @@ import * as search from './visualSearch'
 describe('go/no-go', () => {
   it('shows the no-go digit exactly on no-go trials', () => {
     const rng = seededRng(1)
-    for (let level = 1; level <= 10; level++) {
+    for (let level = 1; level <= 20; level++) {
       for (let i = 0; i < 300; i++) {
         const t = goNoGo.generateTrial(level, rng)
         expect(t.digit === goNoGo.NOGO_DIGIT).toBe(t.kind === 'nogo')
@@ -18,16 +18,19 @@ describe('go/no-go', () => {
   })
 
   it('gets faster with rarer no-gos as levels rise', () => {
-    expect(goNoGo.intervalMs(10)).toBeLessThan(goNoGo.intervalMs(1))
-    expect(goNoGo.nogoShare(10)).toBeLessThan(goNoGo.nogoShare(1))
-    expect(goNoGo.nogoShare(10)).toBeGreaterThan(0.1)
+    for (let level = 2; level <= 20; level++) {
+      expect(goNoGo.intervalMs(level)).toBeLessThan(goNoGo.intervalMs(level - 1))
+      expect(goNoGo.nogoShare(level)).toBeLessThan(goNoGo.nogoShare(level - 1))
+    }
+    expect(goNoGo.intervalMs(20)).toBe(400)
+    expect(goNoGo.nogoShare(20)).toBeCloseTo(0.08)
   })
 })
 
 describe('flanker', () => {
   it('puts the target in the middle, flankers matching the kind', () => {
     const rng = seededRng(2)
-    for (let level = 1; level <= 10; level++) {
+    for (let level = 1; level <= 20; level++) {
       for (let i = 0; i < 200; i++) {
         const t = flanker.generateTrial(level, rng)
         const chars = [...t.arrows]
@@ -44,13 +47,15 @@ describe('flanker', () => {
   it('shortens the deadline with the level', () => {
     expect(flanker.timeLimitMs(1)).toBe(2500)
     expect(flanker.timeLimitMs(10)).toBe(700)
+    for (let level = 2; level <= 20; level++) expect(flanker.timeLimitMs(level)).toBeLessThan(flanker.timeLimitMs(level - 1))
+    expect(flanker.flankersPerSide(20)).toBe(4)
   })
 })
 
 describe('visual search', () => {
   it('places exactly one target when present and none when absent', () => {
     const rng = seededRng(3)
-    for (let level = 1; level <= 10; level++) {
+    for (let level = 1; level <= 20; level++) {
       for (let i = 0; i < 200; i++) {
         const t = search.generateTrial(level, rng)
         expect(t.grid).toHaveLength(t.side * t.side)
@@ -64,5 +69,6 @@ describe('visual search', () => {
   it('grows the grid with the level', () => {
     expect(search.searchSpec(1).side).toBe(3)
     expect(search.searchSpec(10).side).toBe(8)
+    expect(search.searchSpec(20).side).toBe(10)
   })
 })

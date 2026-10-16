@@ -1,6 +1,6 @@
 import { useCallback, useId } from 'react'
 import { MATRIX_KIND_LABELS } from '../domains/logic/labels'
-import { generateTrial, LEVEL_BOUNDS, type Figure, type MatrixKind } from '../domains/logic/matrices'
+import { generateTrial, LEVEL_BOUNDS, matrixTimeLimitMs, type Figure, type MatrixKind } from '../domains/logic/matrices'
 import { SessionFrame, type ExerciseProps } from './SessionFrame'
 import { useAdaptiveSession } from './useAdaptiveSession'
 import { useKeyboardChoice } from './useKeyboardChoice'
@@ -53,7 +53,17 @@ export function MatrixSession({ startLevel, focus, length, onFinish, onQuit }: E
     const t = generateTrial(level, Math.random, focus)
     return { ...t, category: t.kind }
   }, [focus])
-  const session = useAdaptiveSession({ domain: 'logic', exercise: 'matrices', bounds: LEVEL_BOUNDS, length, startLevel, generate, onFinish })
+  const session = useAdaptiveSession({
+    domain: 'logic',
+    exercise: 'matrices',
+    bounds: LEVEL_BOUNDS,
+    length,
+    startLevel,
+    generate,
+    onFinish,
+    timeLimitMs: (item) => matrixTimeLimitMs(item.level),
+    timeoutText: (item) => `Temps écoulé : c’était la figure ${item.answerIndex + 1}`,
+  })
   const trial = session.item
 
   function choose(index: number) {
@@ -72,6 +82,7 @@ export function MatrixSession({ startLevel, focus, length, onFinish, onQuit }: E
       level={session.level}
       focusLabel={focus === null ? null : (MATRIX_KIND_LABELS[focus] ?? focus)}
       feedback={session.feedback}
+      timeLimit={session.timeLimit}
       onQuit={onQuit}
     >
       <p className="instruction muted">Quelle figure complète la grille ? Regarde les lignes et les colonnes.</p>

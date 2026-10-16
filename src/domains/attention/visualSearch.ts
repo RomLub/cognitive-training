@@ -11,7 +11,7 @@ export function isSearchKind(value: string): value is SearchKind {
   return value === 'present' || value === 'absent'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 20
 export const FOCUS_SHARE = 0.5
 
@@ -40,6 +40,16 @@ const LEVELS: readonly SearchSpec[] = [
   { side: 7, family: 2, timeLimitMs: 5000 },
   { side: 7, family: 2, timeLimitMs: 4000 },
   { side: 8, family: 2, timeLimitMs: 4500 },
+  { side: 8, family: 2, timeLimitMs: 4000 },
+  { side: 8, family: 2, timeLimitMs: 3600 },
+  { side: 9, family: 2, timeLimitMs: 4000 },
+  { side: 9, family: 2, timeLimitMs: 3600 },
+  { side: 9, family: 2, timeLimitMs: 3200 },
+  { side: 10, family: 2, timeLimitMs: 3600 },
+  { side: 10, family: 2, timeLimitMs: 3200 },
+  { side: 10, family: 2, timeLimitMs: 2900 },
+  { side: 10, family: 2, timeLimitMs: 2700 },
+  { side: 10, family: 2, timeLimitMs: 2500 },
 ]
 
 export function searchSpec(level: number): SearchSpec {

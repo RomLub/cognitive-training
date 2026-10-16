@@ -17,7 +17,7 @@ function follows(rule: MatrixRule, values: number[]): boolean {
 describe('matrices', () => {
   it('builds grids that follow their rules, with a unique right option', () => {
     const rng = seededRng(14)
-    for (let level = 1; level <= 10; level++) {
+    for (let level = 1; level <= 20; level++) {
       const spec = matrixSpec(level)
       for (let i = 0; i < 100; i++) {
         const t = generateTrial(level, rng)

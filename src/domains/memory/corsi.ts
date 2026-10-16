@@ -11,12 +11,11 @@ export function isCorsiMode(value: string): value is CorsiMode {
   return value === 'forward' || value === 'backward'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 10
 export const FOCUS_SHARE = 0.5
 /** Backward recall is introduced at this level. */
 export const BACKWARD_FROM_LEVEL = 3
-export const FLASH_MS = 700
 export const GAP_MS = 250
 
 /** Classic irregular layout of the 9 blocks, as % of the board (x, y of the top-left corner). */
@@ -24,12 +23,23 @@ export const BLOCK_POSITIONS: readonly (readonly [number, number])[] = [
   [8, 62], [24, 18], [36, 76], [44, 42], [58, 10], [62, 64], [74, 34], [80, 78], [12, 34],
 ]
 
-/** Sequence length: forward 2 → 11, backward one shorter. */
-export function corsiLength(level: number, mode: CorsiMode): number {
+function checkLevel(level: number): void {
   if (!Number.isInteger(level) || level < LEVEL_BOUNDS.min || level > LEVEL_BOUNDS.max) {
     throw new Error(`Unknown Corsi level: ${level}`)
   }
-  return mode === 'forward' ? level + 1 : level
+}
+
+/** Sequence length: forward 2 → 11 up to level 10, then +1 every two levels (16 at level 20); backward one shorter. */
+export function corsiLength(level: number, mode: CorsiMode): number {
+  checkLevel(level)
+  const forward = level <= 10 ? level + 1 : 11 + Math.ceil((level - 10) / 2)
+  return mode === 'forward' ? forward : forward - 1
+}
+
+/** How long each block lights up: 0.7 s up to level 10, then down to 0.4 s at level 20. */
+export function flashMs(level: number): number {
+  checkLevel(level)
+  return level <= 10 ? 700 : 700 - (level - 10) * 30
 }
 
 export interface CorsiTrial {
@@ -38,6 +48,7 @@ export interface CorsiTrial {
   /** Expected taps. */
   answer: number[]
   level: number
+  flashMs: number
 }
 
 export function generateTrial(level: number, rng: Rng = Math.random, focus: CorsiMode | null = null): CorsiTrial {
@@ -52,5 +63,5 @@ export function generateTrial(level: number, rng: Rng = Math.random, focus: Cors
     // A block may come back later, but never twice in a row (it would look like one long flash).
     if (block !== sequence.at(-1)) sequence.push(block)
   }
-  return { sequence, mode, answer: mode === 'forward' ? sequence : sequence.toReversed(), level }
+  return { sequence, mode, answer: mode === 'forward' ? sequence : sequence.toReversed(), level, flashMs: flashMs(level) }
 }

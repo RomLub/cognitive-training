@@ -11,7 +11,7 @@ export function isPracticalKind(value: string): value is PracticalKind {
   return (PRACTICAL_KINDS as readonly string[]).includes(value)
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 12
 export const FOCUS_SHARE = 0.5
 
@@ -34,6 +34,17 @@ const LEVELS: readonly PracticalSpec[] = [
   { kinds: PRACTICAL_KINDS, percents: [12, 15, 35, 45, 65, 85], denominators: [6, 7, 8, 9], maxBase: 1000 },
   { kinds: PRACTICAL_KINDS, percents: [2, 3, 4, 6, 8, 12, 15, 35, 45], denominators: [7, 8, 9, 12], maxBase: 1500 },
   { kinds: PRACTICAL_KINDS, percents: [2, 3, 6, 7, 8, 12, 16, 35, 45, 65], denominators: [7, 9, 11, 12, 15], maxBase: 2000 },
+  // Levels 11-20: unusual percentages and denominators, bases up to 25 000.
+  { kinds: PRACTICAL_KINDS, percents: [7, 13, 17, 23, 35, 45, 65], denominators: [7, 9, 11, 13], maxBase: 3000 },
+  { kinds: PRACTICAL_KINDS, percents: [6, 14, 18, 26, 42, 58, 72], denominators: [9, 11, 13, 16], maxBase: 4000 },
+  { kinds: PRACTICAL_KINDS, percents: [3, 7, 13, 17, 19, 23, 27], denominators: [11, 13, 16, 17], maxBase: 5000 },
+  { kinds: PRACTICAL_KINDS, percents: [4, 6, 9, 11, 14, 22, 28, 36], denominators: [12, 15, 16, 18], maxBase: 6000 },
+  { kinds: PRACTICAL_KINDS, percents: [7, 11, 13, 17, 19, 21, 29, 31], denominators: [13, 17, 19, 24], maxBase: 8000 },
+  { kinds: PRACTICAL_KINDS, percents: [3, 9, 13, 19, 27, 33, 41], denominators: [16, 19, 23, 25], maxBase: 10000 },
+  { kinds: PRACTICAL_KINDS, percents: [7, 17, 23, 29, 37, 43, 53], denominators: [17, 21, 23, 27], maxBase: 12000 },
+  { kinds: PRACTICAL_KINDS, percents: [11, 19, 31, 37, 47, 59, 61], denominators: [19, 23, 27, 29], maxBase: 15000 },
+  { kinds: PRACTICAL_KINDS, percents: [13, 23, 29, 41, 53, 67, 71], denominators: [23, 29, 31, 32], maxBase: 20000 },
+  { kinds: PRACTICAL_KINDS, percents: [17, 29, 37, 43, 59, 73, 83], denominators: [29, 31, 37, 41], maxBase: 25000 },
 ]
 
 export function practicalSpec(level: number): PracticalSpec {

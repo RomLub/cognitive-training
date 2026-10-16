@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { CAPACITIES, EXTRA_MOVES_ALLOWED, generateTrial, LEVEL_BOUNDS, move, sameState, type Ball, type TowerState } from '../domains/executive/tower'
+import { CAPACITIES, EXTRA_MOVES_ALLOWED, generateTrial, LEVEL_BOUNDS, move, sameState, towerTimeLimitMs, type Ball, type TowerState } from '../domains/executive/tower'
 import { SessionFrame, type ExerciseProps } from './SessionFrame'
 import { useAdaptiveSession } from './useAdaptiveSession'
 
@@ -44,7 +44,17 @@ function Pegs({ state, selected, onPeg, small = false }: { state: TowerState; se
 
 export function TowerSession({ startLevel, length, onFinish, onQuit }: ExerciseProps<'plan'>) {
   const generate = useCallback((level: number) => ({ ...generateTrial(level), category: 'plan' }), [])
-  const session = useAdaptiveSession({ domain: 'executive', exercise: 'tower-of-london', bounds: LEVEL_BOUNDS, length, startLevel, generate, onFinish })
+  const session = useAdaptiveSession({
+    domain: 'executive',
+    exercise: 'tower-of-london',
+    bounds: LEVEL_BOUNDS,
+    length,
+    startLevel,
+    generate,
+    onFinish,
+    timeLimitMs: (item) => towerTimeLimitMs(item.level),
+    timeoutText: (item) => `Temps écoulé : le minimum était ${item.minMoves} coups`,
+  })
   const trial = session.item
   const [state, setState] = useState<TowerState>(trial.start)
   const [selected, setSelected] = useState<number | null>(null)
@@ -85,6 +95,7 @@ export function TowerSession({ startLevel, length, onFinish, onQuit }: ExerciseP
       level={session.level}
       focusLabel={null}
       feedback={session.feedback}
+      timeLimit={session.timeLimit}
       onQuit={onQuit}
     >
       <p className="instruction">

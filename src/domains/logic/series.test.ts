@@ -22,7 +22,7 @@ describe('number series', () => {
       for (let i = 0; i < 300; i++) {
         const t = generateTrial(level, rng)
         expect(rulesForLevel(level)).toContain(t.rule)
-        expect(t.terms.length).toBeGreaterThanOrEqual(5)
+        expect(t.terms.length).toBeGreaterThanOrEqual(level >= 15 ? 4 : 5)
         for (const n of [...t.terms, t.answer]) {
           expect(Number.isInteger(n)).toBe(true)
           expect(n).toBeGreaterThanOrEqual(0)
@@ -51,6 +51,6 @@ describe('number series', () => {
 
   it('rejects unknown levels', () => {
     expect(() => generateTrial(0)).toThrow()
-    expect(() => generateTrial(11)).toThrow()
+    expect(() => generateTrial(21)).toThrow()
   })
 })

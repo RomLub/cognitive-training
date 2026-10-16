@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { SYLLOGISM_KIND_LABELS } from '../domains/logic/labels'
-import { generateTrial, LEVEL_BOUNDS, type SyllogismKind } from '../domains/logic/syllogism'
+import { generateTrial, LEVEL_BOUNDS, syllogismTimeLimitMs, type SyllogismKind } from '../domains/logic/syllogism'
 import { parseKeyword } from '../voice/parse'
 import { SessionFrame, type ExerciseProps } from './SessionFrame'
 import { useAdaptiveSession } from './useAdaptiveSession'
@@ -17,7 +17,17 @@ export function SyllogismSession({ startLevel, focus, length, voice, onFinish, o
     const t = generateTrial(level, Math.random, focus)
     return { ...t, category: t.kind }
   }, [focus])
-  const session = useAdaptiveSession({ domain: 'logic', exercise: 'syllogisms', bounds: LEVEL_BOUNDS, length, startLevel, generate, onFinish })
+  const session = useAdaptiveSession({
+    domain: 'logic',
+    exercise: 'syllogisms',
+    bounds: LEVEL_BOUNDS,
+    length,
+    startLevel,
+    generate,
+    onFinish,
+    timeLimitMs: (item) => syllogismTimeLimitMs(item.level),
+    timeoutText: (item) => `Temps écoulé : la conclusion était ${item.kind === 'valid' ? 'valide' : 'non valide'}`,
+  })
   const trial = session.item
 
   function choose(verdict: SyllogismKind) {
@@ -39,6 +49,7 @@ export function SyllogismSession({ startLevel, focus, length, voice, onFinish, o
       level={session.level}
       focusLabel={focus === null ? null : (SYLLOGISM_KIND_LABELS[focus] ?? focus)}
       feedback={session.feedback}
+      timeLimit={session.timeLimit}
       onQuit={onQuit}
       status={<VoiceStatus state={voiceState} />}
     >

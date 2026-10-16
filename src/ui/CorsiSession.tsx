@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { CORSI_LABELS } from '../domains/memory/labels'
-import { BLOCK_POSITIONS, FLASH_MS, GAP_MS, generateTrial, LEVEL_BOUNDS, type CorsiMode } from '../domains/memory/corsi'
+import { BLOCK_POSITIONS, GAP_MS, generateTrial, LEVEL_BOUNDS, type CorsiMode } from '../domains/memory/corsi'
 import { SessionFrame, type ExerciseProps } from './SessionFrame'
 import { useAdaptiveSession } from './useAdaptiveSession'
 
@@ -18,10 +18,10 @@ export function CorsiSession({ startLevel, focus, length, onFinish, onQuit }: Ex
   const [taps, setTaps] = useState<number[]>([])
 
   useEffect(() => {
-    const step = FLASH_MS + GAP_MS
+    const step = trial.flashMs + GAP_MS
     const timers = trial.sequence.flatMap((block, i) => [
       setTimeout(() => setLit(block), LEAD_MS + i * step),
-      setTimeout(() => setLit(null), LEAD_MS + i * step + FLASH_MS),
+      setTimeout(() => setLit(null), LEAD_MS + i * step + trial.flashMs),
     ])
     timers.push(
       setTimeout(() => {

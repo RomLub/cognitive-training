@@ -14,7 +14,7 @@ export function isTrailKind(value: string): value is TrailKind {
   return value === 'numbers' || value === 'alternating'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 4
 export const FOCUS_SHARE = 0.5
 /** Circle positions are kept this far apart (in % of the board). */
@@ -29,12 +29,14 @@ function checkLevel(level: number): void {
 /** Circles: 6 at level 1 up to 24 at level 10. */
 export function nodeCount(level: number): number {
   checkLevel(level)
-  return 6 + 2 * (level - 1)
+  // 24 at level 10, then 26 at most: more circles would not fit apart on a phone screen.
+  return level <= 10 ? 6 + 2 * (level - 1) : Math.min(26, 24 + Math.floor((level - 7) / 4))
 }
 
 /** Time allowed for the whole trail: ~1.7 s per circle at level 1, ~1 s at level 10. */
 export function trailTimeLimitMs(level: number): number {
-  return nodeCount(level) * (1800 - 80 * level)
+  const perNode = level <= 10 ? 1800 - 80 * level : 950 - 25 * (level - 11)
+  return nodeCount(level) * perNode
 }
 
 /** Labels in the order they must be clicked. */

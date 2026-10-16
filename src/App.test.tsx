@@ -40,6 +40,8 @@ class MemoryRepository implements SessionRepository {
 function clickInCard(cardTitle: string, button: 'Commencer' | 'Progrès') {
   const card = screen.getByRole('article', { name: cardTitle })
   fireEvent.click(within(card).getByRole('button', { name: button }))
+  // Starting an exercise goes through its instruction screen.
+  if (button === 'Commencer') fireEvent.click(screen.getByRole('button', { name: 'C’est parti !' }))
 }
 
 /** Reads "a op b" from the screen and computes the expected answer. */
@@ -483,12 +485,12 @@ describe('App difficulty ceiling, evolution and chart', () => {
     const repo = new MemoryRepository()
     repo.records.push({
       id: 'top', domain: 'calculation', exercise: 'arithmetic', startedAt: '2026-10-14T10:00:00.000Z',
-      startLevel: 10, endLevel: 10, items: 20, correct: 20, avgResponseMs: 3000,
+      startLevel: 20, endLevel: 20, items: 20, correct: 20, avgResponseMs: 3000,
     })
     render(<App repository={repo} />)
     clickInCard('Opérations', 'Commencer')
     for (let i = 0; i < CALC_SESSION_LENGTH; i++) answerCurrentItem()
-    expect(screen.getByText(/Niveau maximal atteint \(10\)/)).toBeTruthy()
+    expect(screen.getByText(/Niveau maximal atteint \(20\)/)).toBeTruthy()
   })
 
   it('does not flag a session below the maximum', () => {

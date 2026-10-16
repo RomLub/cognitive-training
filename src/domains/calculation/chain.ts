@@ -15,11 +15,9 @@ export function isChainKind(value: string): value is ChainKind {
   return value === 'additive' || value === 'multiplicative'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 10
 export const FOCUS_SHARE = 0.5
-/** Running totals stay within this range so the chain remains mental arithmetic. */
-const MAX_TOTAL = 999
 
 interface ChainSpec {
   steps: number
@@ -27,19 +25,31 @@ interface ChainSpec {
   /** Multiplier/divisor range, null when × ÷ are not used yet. */
   mult: readonly [number, number] | null
   stepMs: number
+  /** Running totals stay within this range so the chain remains mental arithmetic. */
+  maxTotal: number
 }
 
 const LEVELS: readonly ChainSpec[] = [
-  { steps: 3, addMax: 9, mult: null, stepMs: 2000 },
-  { steps: 4, addMax: 9, mult: null, stepMs: 2000 },
-  { steps: 4, addMax: 9, mult: [2, 3], stepMs: 1800 },
-  { steps: 5, addMax: 20, mult: [2, 3], stepMs: 1800 },
-  { steps: 5, addMax: 20, mult: [2, 5], stepMs: 1600 },
-  { steps: 6, addMax: 20, mult: [2, 5], stepMs: 1600 },
-  { steps: 6, addMax: 50, mult: [2, 9], stepMs: 1400 },
-  { steps: 7, addMax: 50, mult: [2, 9], stepMs: 1400 },
-  { steps: 8, addMax: 50, mult: [2, 9], stepMs: 1200 },
-  { steps: 8, addMax: 99, mult: [2, 9], stepMs: 1000 },
+  { steps: 3, addMax: 9, mult: null, stepMs: 2000, maxTotal: 999 },
+  { steps: 4, addMax: 9, mult: null, stepMs: 2000, maxTotal: 999 },
+  { steps: 4, addMax: 9, mult: [2, 3], stepMs: 1800, maxTotal: 999 },
+  { steps: 5, addMax: 20, mult: [2, 3], stepMs: 1800, maxTotal: 999 },
+  { steps: 5, addMax: 20, mult: [2, 5], stepMs: 1600, maxTotal: 999 },
+  { steps: 6, addMax: 20, mult: [2, 5], stepMs: 1600, maxTotal: 999 },
+  { steps: 6, addMax: 50, mult: [2, 9], stepMs: 1400, maxTotal: 999 },
+  { steps: 7, addMax: 50, mult: [2, 9], stepMs: 1400, maxTotal: 999 },
+  { steps: 8, addMax: 50, mult: [2, 9], stepMs: 1200, maxTotal: 999 },
+  { steps: 8, addMax: 99, mult: [2, 9], stepMs: 1000, maxTotal: 999 },
+  { steps: 9, addMax: 99, mult: [2, 12], stepMs: 950, maxTotal: 2999 },
+  { steps: 9, addMax: 150, mult: [2, 12], stepMs: 900, maxTotal: 2999 },
+  { steps: 10, addMax: 150, mult: [2, 12], stepMs: 850, maxTotal: 4999 },
+  { steps: 10, addMax: 200, mult: [2, 15], stepMs: 800, maxTotal: 4999 },
+  { steps: 11, addMax: 200, mult: [2, 15], stepMs: 750, maxTotal: 9999 },
+  { steps: 11, addMax: 300, mult: [2, 15], stepMs: 700, maxTotal: 9999 },
+  { steps: 12, addMax: 300, mult: [2, 19], stepMs: 680, maxTotal: 9999 },
+  { steps: 12, addMax: 500, mult: [2, 19], stepMs: 650, maxTotal: 9999 },
+  { steps: 12, addMax: 500, mult: [2, 25], stepMs: 620, maxTotal: 9999 },
+  { steps: 12, addMax: 999, mult: [2, 25], stepMs: 600, maxTotal: 9999 },
 ]
 
 export function chainSpec(level: number): ChainSpec {
@@ -71,18 +81,18 @@ export function applyStep(total: number, step: ChainStep): number {
   }
 }
 
-/** Picks a valid next step: non-negative total, exact division, total under MAX_TOTAL. */
+/** Picks a valid next step: non-negative total, exact division, total within the level's maximum. */
 function nextStep(total: number, spec: ChainSpec, allowMult: boolean, rng: Rng): ChainStep {
   const options: ChainStep[] = []
   if (allowMult && spec.mult !== null) {
     const m = randInt(rng, spec.mult[0], spec.mult[1])
-    if (total * m <= MAX_TOTAL && total > 0) options.push({ op: '×', value: m })
+    if (total * m <= spec.maxTotal && total > 0) options.push({ op: '×', value: m })
     const divisors = []
     for (let d = spec.mult[0]; d <= spec.mult[1]; d++) if (total > 0 && total % d === 0) divisors.push(d)
     if (divisors.length > 0) options.push({ op: '÷', value: pick(rng, divisors) })
   }
   const a = randInt(rng, 1, spec.addMax)
-  if (total + a <= MAX_TOTAL) options.push({ op: '+', value: a })
+  if (total + a <= spec.maxTotal) options.push({ op: '+', value: a })
   if (total > 0) options.push({ op: '-', value: randInt(rng, 1, Math.min(spec.addMax, total)) })
   return pick(rng, options)
 }

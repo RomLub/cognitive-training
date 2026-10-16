@@ -20,7 +20,7 @@ export function isMatrixKind(value: string): value is MatrixKind {
   return value === 'column' || value === 'row' || value === 'latin'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 8
 export const FOCUS_SHARE = 0.5
 
@@ -49,7 +49,14 @@ const LEVELS: readonly MatrixSpec[] = [
   { varying: 3, rules: ['row', 'latin'], options: 8 },
   { varying: 3, rules: ['latin'], options: 8 },
   { varying: 3, rules: ['latin'], options: 8 },
+  ...Array.from({ length: 10 }, (): MatrixSpec => ({ varying: 3, rules: ['latin'], options: 8 })),
 ]
+
+/** No time limit up to level 10, then 60 s per matrix down to 24 s at level 20. */
+export function matrixTimeLimitMs(level: number): number | null {
+  matrixSpec(level)
+  return level <= 10 ? null : 60_000 - (level - 11) * 4_000
+}
 
 export function matrixSpec(level: number): MatrixSpec {
   const spec = LEVELS[level - 1]

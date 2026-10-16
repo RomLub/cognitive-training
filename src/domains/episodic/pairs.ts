@@ -14,7 +14,7 @@ export function isAssociationKind(value: string): value is AssociationKind {
   return value === 'related' || value === 'unrelated'
 }
 
-export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 10 }
+export const LEVEL_BOUNDS: LevelBounds = { min: 1, max: 20 }
 export const SESSION_LENGTH = 3
 export const FOCUS_SHARE = 0.5
 export const PASS_RATIO = 0.7
@@ -35,6 +35,16 @@ const LEVELS: readonly PairsSpec[] = [
   { pairs: 8, showMs: 2000 },
   { pairs: 9, showMs: 2000 },
   { pairs: 10, showMs: 1800 },
+  { pairs: 10, showMs: 1700 },
+  { pairs: 11, showMs: 1600 },
+  { pairs: 11, showMs: 1500 },
+  { pairs: 12, showMs: 1450 },
+  { pairs: 12, showMs: 1400 },
+  { pairs: 13, showMs: 1350 },
+  { pairs: 14, showMs: 1300 },
+  { pairs: 14, showMs: 1200 },
+  { pairs: 15, showMs: 1150 },
+  { pairs: 16, showMs: 1100 },
 ]
 
 export function pairsSpec(level: number): PairsSpec {

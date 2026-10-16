@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { seededRng } from '../../core/random'
-import { FOCUS_SHARE, generateTrial, LEVEL_BOUNDS, normalizeSpanAnswer, spanLength, type SpanMode } from './span'
+import { digitMs, FOCUS_SHARE, generateTrial, LEVEL_BOUNDS, normalizeSpanAnswer, spanLength, type SpanMode } from './span'
 
 describe('spanLength', () => {
   it('grows with the level, backward one shorter', () => {
     expect(spanLength(1, 'forward')).toBe(3)
     expect(spanLength(1, 'backward')).toBe(2)
-    expect(spanLength(LEVEL_BOUNDS.max, 'forward')).toBe(12)
+    expect(spanLength(10, 'forward')).toBe(12)
+    expect(spanLength(LEVEL_BOUNDS.max, 'forward')).toBe(17)
+    expect(digitMs(LEVEL_BOUNDS.max)).toBe(400)
   })
 
   it('rejects unknown levels', () => {

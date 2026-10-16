@@ -11,7 +11,7 @@ describe('trail making', () => {
 
   it('places all circles inside the board and apart from each other', () => {
     const rng = seededRng(5)
-    for (let level = 1; level <= 10; level++) {
+    for (let level = 1; level <= 20; level++) {
       for (let i = 0; i < 20; i++) {
         const t = trail.generateTrial(level, rng)
         expect(t.nodes).toHaveLength(trail.nodeCount(level))
@@ -25,7 +25,10 @@ describe('trail making', () => {
   })
 
   it('gives less time per circle as levels rise', () => {
-    expect(trail.trailTimeLimitMs(1) / trail.nodeCount(1)).toBeGreaterThan(trail.trailTimeLimitMs(10) / trail.nodeCount(10))
+    for (let level = 2; level <= 20; level++) {
+      expect(trail.trailTimeLimitMs(level) / trail.nodeCount(level)).toBeLessThan(trail.trailTimeLimitMs(level - 1) / trail.nodeCount(level - 1))
+    }
+    expect(trail.nodeCount(20)).toBe(26)
   })
 })
 
@@ -47,7 +50,7 @@ describe('tower of London', () => {
 
   it('builds problems whose minimum matches the level', () => {
     const rng = seededRng(8)
-    for (let level = 1; level <= 10; level++) {
+    for (let level = 1; level <= 20; level++) {
       const t = tower.generateTrial(level, rng)
       expect(tower.minMoves(t.start, t.goal)).toBe(tower.minMovesFor(level))
       expect(t.minMoves).toBe(tower.minMovesFor(level))

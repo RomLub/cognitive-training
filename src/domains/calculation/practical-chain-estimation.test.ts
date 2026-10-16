@@ -16,7 +16,7 @@ describe('chain calculation', () => {
           total = chain.applyStep(total, step)
           expect(Number.isInteger(total)).toBe(true)
           expect(total).toBeGreaterThanOrEqual(0)
-          expect(total).toBeLessThanOrEqual(999)
+          expect(total).toBeLessThanOrEqual(chain.chainSpec(level).maxTotal)
         }
         expect(total).toBe(t.answer)
         const hasMult = t.steps.some((s) => s.op === '×' || s.op === '÷')

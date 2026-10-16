@@ -32,13 +32,15 @@ describe('fluency', () => {
     expect(fluency.fluencyTarget(1, 'semantic')).toBe(8)
     expect(fluency.fluencyTarget(10, 'semantic')).toBe(26)
     expect(fluency.fluencyTarget(10, 'phonemic')).toBeLessThan(26)
+    expect(fluency.fluencyTarget(20, 'semantic')).toBe(26)
+    expect(fluency.roundMs(20)).toBe(45_000)
   })
 })
 
 describe('anagrams', () => {
   it('scrambles a bank word of the level length, never already solved', () => {
     const rng = seededRng(9)
-    for (let level = 1; level <= 10; level++) {
+    for (let level = 1; level <= 20; level++) {
       const [min, max] = anagram.lengthRange(level)
       for (let i = 0; i < 100; i++) {
         const t = anagram.generateTrial(level, rng)
