@@ -1,4 +1,4 @@
-import type { CategoryTotals, CognitiveDomain, ItemResult, SessionRecord } from './types'
+import type { CategoryTotals, ItemResult, SessionRecord } from './types'
 
 export function summarizeItems(
   results: readonly ItemResult[],
@@ -58,20 +58,16 @@ export function weakestCategory(stats: readonly CategoryStats[]): CategoryStats 
   return weakest === undefined || weakest.accuracy === 1 ? null : weakest
 }
 
-/** The last `count` sessions of a domain, oldest first. */
-export function recentSessions(domain: CognitiveDomain, records: readonly SessionRecord[], count: number): SessionRecord[] {
-  return records
-    .filter((r) => r.domain === domain)
-    .toSorted((x, y) => x.startedAt.localeCompare(y.startedAt))
-    .slice(-count)
+/** Sessions of one exercise, oldest first. */
+export function sessionsOf(records: readonly SessionRecord[], exercise: string): SessionRecord[] {
+  return records.filter((r) => r.exercise === exercise).toSorted((x, y) => x.startedAt.localeCompare(y.startedAt))
 }
 
 export function accuracy(record: Pick<SessionRecord, 'items' | 'correct'>): number {
   return record.items === 0 ? 0 : record.correct / record.items
 }
 
-export interface DomainProgress {
-  domain: CognitiveDomain
+export interface ExerciseProgress {
   sessions: number
   currentLevel: number | null
   bestLevel: number | null
@@ -79,15 +75,13 @@ export interface DomainProgress {
   accuracyTrend: number | null
 }
 
-export function domainProgress(domain: CognitiveDomain, records: readonly SessionRecord[]): DomainProgress {
-  const sorted = records
-    .filter((r) => r.domain === domain)
-    .sort((x, y) => x.startedAt.localeCompare(y.startedAt))
+/** Progress over the given sessions (typically `sessionsOf` one exercise); order does not matter. */
+export function progressOf(sessions: readonly SessionRecord[]): ExerciseProgress {
+  const sorted = sessions.toSorted((x, y) => x.startedAt.localeCompare(y.startedAt))
   const recent = sorted.slice(-5)
   const previous = sorted.slice(-10, -5)
   const meanAcc = (rs: readonly SessionRecord[]) => rs.reduce((s, r) => s + accuracy(r), 0) / rs.length
   return {
-    domain,
     sessions: sorted.length,
     currentLevel: sorted.at(-1)?.endLevel ?? null,
     bestLevel: sorted.length === 0 ? null : Math.max(...sorted.map((r) => r.endLevel)),

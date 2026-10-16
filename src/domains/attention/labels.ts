@@ -24,3 +24,9 @@ export const COLOR_KEYS: Record<InkColor, string> = {
   purple: 'i',
   brown: 'm',
 }
+
+export const GO_KIND_LABELS: Record<string, string> = { go: 'Appuyer', nogo: 'Se retenir' }
+
+export const FLANKER_KIND_LABELS: Record<string, string> = { congruent: 'Concordant', incongruent: 'Discordant' }
+
+export const SEARCH_KIND_LABELS: Record<string, string> = { present: 'Cible présente', absent: 'Cible absente' }

@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { SessionRecord } from '../core/types'
-import { LocalStorageSessionRepository, STORAGE_KEY, StorageCorruptedError } from './sessionRepository'
+import { LEGACY_EXERCISE_BY_DOMAIN, LocalStorageSessionRepository, STORAGE_KEY, StorageCorruptedError } from './sessionRepository'
 
 const record: SessionRecord = {
   id: 'a',
   domain: 'calculation',
+  exercise: 'arithmetic',
   startedAt: '2026-10-15T10:00:00.000Z',
   startLevel: 1,
   endLevel: 2,
@@ -53,5 +54,25 @@ describe('LocalStorageSessionRepository', () => {
   it('fails loudly on a malformed breakdown', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify([{ ...record, breakdown: { '+': { items: 'x' } } }]))
     expect(() => new LocalStorageSessionRepository().list()).toThrow(StorageCorruptedError)
+  })
+
+  it('migrates sessions saved before exercises existed to their original exercise', () => {
+    const { exercise: _dropped, ...legacy } = record
+    const legacyMemory = { ...legacy, id: 'm', domain: 'memory' }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([legacy, legacyMemory]))
+    const migrated = new LocalStorageSessionRepository().list()
+    expect(migrated.map((r) => r.exercise)).toEqual(['arithmetic', 'digit-span'])
+    expect(LEGACY_EXERCISE_BY_DOMAIN.calculation).toBe('arithmetic')
+  })
+
+  it('fails loudly on a record of a new domain without exercise', () => {
+    const { exercise: _dropped, ...legacy } = record
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([{ ...legacy, domain: 'language' }]))
+    expect(() => new LocalStorageSessionRepository().list()).toThrow(StorageCorruptedError)
+  })
+
+  it('refuses to store a record without exercise', () => {
+    const { exercise: _dropped, ...legacy } = record
+    expect(() => new LocalStorageSessionRepository().add(legacy as SessionRecord)).toThrow()
   })
 })

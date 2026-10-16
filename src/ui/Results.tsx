@@ -1,11 +1,11 @@
 import { accuracy, categoryStats } from '../core/stats'
 import type { SessionRecord } from '../core/types'
 import { CategoryTable } from './CategoryTable'
-import type { DomainUi } from './domains'
+import type { ExerciseUi } from './exercises'
 import { capitalize, formatPercent, formatSeconds } from './format'
 
 interface Props {
-  config: DomainUi
+  config: ExerciseUi
   record: SessionRecord
   onRestart: () => void
   onHome: () => void

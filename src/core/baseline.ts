@@ -1,4 +1,4 @@
-import type { CognitiveDomain, SessionRecord } from './types'
+import type { SessionRecord } from './types'
 
 /** Number of first sessions that make up the baseline, and of recent sessions compared to it. */
 export const BASELINE_SESSIONS = 3
@@ -30,13 +30,12 @@ export function snapshot(records: readonly SessionRecord[]): Snapshot {
 }
 
 /**
- * Compares the user to themself: first sessions of a domain (baseline) vs the latest ones.
+ * Compares the user to themself: first sessions of an exercise (baseline) vs the latest ones.
  * Recent sessions never overlap the baseline, so with 4-5 sessions the comparison uses only 1-2.
+ * @param sessions sessions of one exercise, any order
  */
-export function domainEvolution(domain: CognitiveDomain, records: readonly SessionRecord[]): Evolution {
-  const sorted = records
-    .filter((r) => r.domain === domain)
-    .toSorted((x, y) => x.startedAt.localeCompare(y.startedAt))
+export function evolutionOf(sessions: readonly SessionRecord[]): Evolution {
+  const sorted = sessions.toSorted((x, y) => x.startedAt.localeCompare(y.startedAt))
   if (sorted.length === 0) return { status: 'none' }
   const baseline = snapshot(sorted.slice(0, BASELINE_SESSIONS))
   if (sorted.length <= BASELINE_SESSIONS) return { status: 'building', baseline }

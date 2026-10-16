@@ -63,6 +63,22 @@ function inkOnScreen(): string {
 
 /** Answers the item on screen correctly, whatever the exercise (logic excepted: it answers 0). */
 function answerCurrentItem() {
+  if (screen.queryByTestId('study-word') !== null) {
+    // Word list: note each word during study (and the delay), then recall them all.
+    const seen = new Set<string>()
+    for (let t = 0; t < 120_000 && screen.queryByLabelText('Mot') === null; t += 100) {
+      act(() => vi.advanceTimersByTime(100))
+      const word = screen.queryByTestId('study-word')?.textContent?.trim() ?? ''
+      if (word.length > 1) seen.add(word)
+    }
+    const input = screen.getByLabelText('Mot')
+    for (const word of seen) {
+      fireEvent.change(input, { target: { value: word } })
+      fireEvent.submit(input.closest('form')!)
+    }
+    fireEvent.click(screen.getByRole('button', { name: /J’ai fini/ }))
+    return
+  }
   if (document.querySelector('.span-mode') !== null) {
     const backward = document.querySelector('.span-mode')!.classList.contains('backward')
     const digits = watchSequence()
@@ -91,7 +107,7 @@ function answerCurrentItem() {
 
 function weakCalcRecord(): SessionRecord {
   return {
-    id: 'prev', domain: 'calculation', startedAt: '2026-10-14T10:00:00.000Z',
+    id: 'prev', domain: 'calculation', exercise: 'arithmetic', startedAt: '2026-10-14T10:00:00.000Z',
     startLevel: 5, endLevel: 5, items: 20, correct: 15, avgResponseMs: 3000,
     breakdown: {
       '+': { items: 10, correct: 10, totalResponseMs: 20000 },
@@ -107,7 +123,7 @@ describe('App calculation flow', () => {
     const repo = new MemoryRepository()
     render(<App repository={repo} />)
 
-    clickInCard('Calcul mental', 'Commencer')
+    clickInCard('Opérations', 'Commencer')
     const input = screen.getByLabelText('Réponse')
     for (let i = 0; i < CALC_SESSION_LENGTH; i++) {
       fireEvent.change(input, { target: { value: String(solveDisplayedProblem()) } })
@@ -131,7 +147,7 @@ describe('App calculation flow', () => {
     const repo = new MemoryRepository()
     repo.records.push(weakCalcRecord())
     render(<App repository={repo} />)
-    clickInCard('Calcul mental', 'Progrès')
+    clickInCard('Opérations', 'Progrès')
     expect(screen.getByText(/Point faible : Division — 50 %/)).toBeTruthy()
   })
 
@@ -139,24 +155,24 @@ describe('App calculation flow', () => {
     const repo = new MemoryRepository()
     repo.records.push(weakCalcRecord())
     render(<App repository={repo} />)
-    clickInCard('Calcul mental', 'Commencer')
+    clickInCard('Opérations', 'Commencer')
     expect(screen.getByText('Focus : Division')).toBeTruthy()
   })
 
   it('shows no focus without a weak point', () => {
     render(<App repository={new MemoryRepository()} />)
-    clickInCard('Calcul mental', 'Commencer')
+    clickInCard('Opérations', 'Commencer')
     expect(screen.queryByText(/Focus :/)).toBeNull()
   })
 
   it('resumes at the last reached level', () => {
     const repo = new MemoryRepository()
     repo.records.push({
-      id: 'prev', domain: 'calculation', startedAt: '2026-10-14T10:00:00.000Z',
+      id: 'prev', domain: 'calculation', exercise: 'arithmetic', startedAt: '2026-10-14T10:00:00.000Z',
       startLevel: 3, endLevel: 6, items: 20, correct: 18, avgResponseMs: 3000,
     })
     render(<App repository={repo} />)
-    clickInCard('Calcul mental', 'Commencer')
+    clickInCard('Opérations', 'Commencer')
     expect(screen.getByText('Niveau 6')).toBeTruthy()
   })
 
@@ -180,7 +196,7 @@ describe('App working memory flow', () => {
     vi.useFakeTimers()
     const repo = new MemoryRepository()
     render(<App repository={repo} />)
-    clickInCard('Mémoire de travail', 'Commencer')
+    clickInCard('Empan de chiffres', 'Commencer')
 
     for (let i = 0; i < MEMORY_SESSION_LENGTH; i++) {
       const backward = document.querySelector('.span-mode')?.classList.contains('backward') ?? false
@@ -192,7 +208,7 @@ describe('App working memory flow', () => {
       fireEvent.submit(input.closest('form')!)
     }
 
-    expect(screen.getByText(/Session terminée — Mémoire de travail/)).toBeTruthy()
+    expect(screen.getByText(/Session terminée — Empan de chiffres/)).toBeTruthy()
     expect(screen.getByText('Par mode')).toBeTruthy()
     const saved = repo.records[0]!
     expect(saved.domain).toBe('memory')
@@ -203,7 +219,7 @@ describe('App working memory flow', () => {
   it('counts a wrong recall as an error and shows the expected sequence', () => {
     vi.useFakeTimers()
     render(<App repository={new MemoryRepository()} />)
-    clickInCard('Mémoire de travail', 'Commencer')
+    clickInCard('Empan de chiffres', 'Commencer')
     watchSequence()
     const input = screen.getByLabelText('Réponse')
     fireEvent.change(input, { target: { value: '0' } })
@@ -214,7 +230,7 @@ describe('App working memory flow', () => {
   it('focuses on the weakest recall mode', () => {
     const repo = new MemoryRepository()
     repo.records.push({
-      id: 'm', domain: 'memory', startedAt: '2026-10-14T10:00:00.000Z',
+      id: 'm', domain: 'memory', exercise: 'digit-span', startedAt: '2026-10-14T10:00:00.000Z',
       startLevel: 3, endLevel: 3, items: 12, correct: 8, avgResponseMs: 4000,
       breakdown: {
         forward: { items: 8, correct: 8, totalResponseMs: 1 },
@@ -222,7 +238,7 @@ describe('App working memory flow', () => {
       },
     })
     render(<App repository={repo} />)
-    clickInCard('Mémoire de travail', 'Commencer')
+    clickInCard('Empan de chiffres', 'Commencer')
     expect(screen.getByText('Focus : Ordre inverse')).toBeTruthy()
     expect(screen.getByText('Niveau 3')).toBeTruthy()
   })
@@ -231,7 +247,7 @@ describe('App working memory flow', () => {
     const repo = new MemoryRepository()
     repo.records.push(weakCalcRecord())
     render(<App repository={repo} />)
-    clickInCard('Mémoire de travail', 'Progrès')
+    clickInCard('Empan de chiffres', 'Progrès')
     expect(screen.getByText('Aucune session pour l\'instant.')).toBeTruthy()
   })
 })
@@ -245,16 +261,16 @@ describe('App attention, logic and speed', () => {
   it('attention: naming the ink color is correct, a full session is saved', () => {
     const repo = new MemoryRepository()
     render(<App repository={repo} />)
-    clickInCard('Attention', 'Commencer')
+    clickInCard('Stroop', 'Commencer')
     expect(screen.getByText('Donne la couleur de l’encre, pas le mot.')).toBeTruthy()
     for (let i = 0; i < ATTENTION_SESSION_LENGTH; i++) answerCurrentItem()
-    expect(screen.getByText(/Session terminée — Attention/)).toBeTruthy()
+    expect(screen.getByText(/Session terminée — Stroop/)).toBeTruthy()
     expect(repo.records[0]!.correct).toBe(ATTENTION_SESSION_LENGTH)
   })
 
   it('attention: answering the word instead of the ink is wrong', () => {
     render(<App repository={new MemoryRepository()} />)
-    clickInCard('Attention', 'Commencer')
+    clickInCard('Stroop', 'Commencer')
     // Find an incongruent trial (word ≠ ink) and answer the word.
     for (let guard = 0; guard < 50; guard++) {
       const word = document.querySelector('.stroop-word')!.textContent!.toLowerCase()
@@ -270,7 +286,7 @@ describe('App attention, logic and speed', () => {
 
   it('attention: keyboard shortcuts answer', () => {
     render(<App repository={new MemoryRepository()} />)
-    clickInCard('Attention', 'Commencer')
+    clickInCard('Stroop', 'Commencer')
     const key = ({ red: 'r', blue: 'b', green: 'v', yellow: 'j' } as Record<string, string>)[inkOnScreen()]!
     fireEvent.keyDown(window, { key })
     expect(screen.getByText(/^✓/)).toBeTruthy()
@@ -279,7 +295,7 @@ describe('App attention, logic and speed', () => {
   it('attention: the deadline counts a missing answer as an error', () => {
     vi.useFakeTimers()
     render(<App repository={new MemoryRepository()} />)
-    clickInCard('Attention', 'Commencer')
+    clickInCard('Stroop', 'Commencer')
     expect(screen.getByText('Essai 1/24')).toBeTruthy()
     act(() => vi.advanceTimersByTime(3100))
     expect(screen.getByText(/✗ Trop lent/)).toBeTruthy()
@@ -289,23 +305,23 @@ describe('App attention, logic and speed', () => {
   it('logic: shows the series, explains the rule after answering, saves the session', () => {
     const repo = new MemoryRepository()
     render(<App repository={repo} />)
-    clickInCard('Logique', 'Commencer')
+    clickInCard('Suites de nombres', 'Commencer')
     expect(document.querySelector('.series')!.textContent).toMatch(/^(\d+, )+\?$/)
     answerCurrentItem()
     expect(screen.getByText(/[✓✗] \d+ — /)).toBeTruthy()
     for (let i = 1; i < LOGIC_SESSION_LENGTH; i++) answerCurrentItem()
-    expect(screen.getByText(/Session terminée — Logique/)).toBeTruthy()
+    expect(screen.getByText(/Session terminée — Suites de nombres/)).toBeTruthy()
     expect(repo.records[0]!.items).toBe(LOGIC_SESSION_LENGTH)
   })
 
   it('speed: judging pairs correctly, with arrow keys too', () => {
     const repo = new MemoryRepository()
     render(<App repository={repo} />)
-    clickInCard('Vitesse de traitement', 'Commencer')
+    clickInCard('Comparaison de séries', 'Commencer')
     const same = screen.getByTestId('pair-left').textContent === screen.getByTestId('pair-right').textContent
     fireEvent.keyDown(window, { key: same ? 'ArrowLeft' : 'ArrowRight' })
     for (let i = 1; i < SPEED_SESSION_LENGTH; i++) answerCurrentItem()
-    expect(screen.getByText(/Session terminée — Vitesse de traitement/)).toBeTruthy()
+    expect(screen.getByText(/Session terminée — Comparaison de séries/)).toBeTruthy()
     expect(repo.records[0]!.correct).toBe(SPEED_SESSION_LENGTH)
   })
 })
@@ -321,8 +337,8 @@ describe('App programs and streak', () => {
     const repo = new MemoryRepository()
     render(<App repository={repo} />)
     const card = screen.getByRole('article', { name: 'Express' })
-    // No history: calculation first, then the first untrained domains.
-    expect(within(card).getByText('Calcul mental → Mémoire de travail → Attention')).toBeTruthy()
+    // No history: calculation first, then the first untrained domains (memory, episodic memory).
+    expect(within(card).getByText('Opérations → Empan de chiffres → Liste de mots')).toBeTruthy()
     fireEvent.click(within(card).getByRole('button', { name: 'Démarrer' }))
 
     expect(screen.getByText(/Étape 1\/3/)).toBeTruthy()
@@ -332,8 +348,8 @@ describe('App programs and streak', () => {
     }
 
     expect(screen.getByText('Programme terminé — Express')).toBeTruthy()
-    expect(repo.records.map((r) => r.domain)).toEqual(['calculation', 'memory', 'attention'])
-    expect(repo.records.map((r) => r.items)).toEqual([10, 6, 12])
+    expect(repo.records.map((r) => r.exercise)).toEqual(['arithmetic', 'digit-span', 'word-list'])
+    expect(repo.records.map((r) => r.items)).toEqual([10, 6, 1])
     fireEvent.click(screen.getByRole('button', { name: 'Accueil' }))
     expect(screen.getByText(/Série : 1 jour · 3 sessions aujourd’hui/)).toBeTruthy()
   })
@@ -396,7 +412,7 @@ describe('App voice answers', () => {
     fireEvent.click(screen.getByRole('button', { name: /Réponse vocale : désactivée/ }))
     expect(localStorage.getItem('cognitive-training:voice')).toBe('on')
 
-    clickInCard('Calcul mental', 'Commencer')
+    clickInCard('Opérations', 'Commencer')
     const recognition = activeRecognition()
     expect(recognition.lang).toBe('fr-FR')
     expect(screen.getByText(/À l’écoute/)).toBeTruthy()
@@ -414,7 +430,7 @@ describe('App voice answers', () => {
     vi.stubGlobal('SpeechRecognition', FakeRecognition)
     localStorage.setItem('cognitive-training:voice', 'on')
     render(<App repository={new MemoryRepository()} />)
-    clickInCard('Attention', 'Commencer')
+    clickInCard('Stroop', 'Commencer')
     activeRecognition().say(INK_TO_NAME[inkOnScreen()]!.toLowerCase())
     expect(screen.getByText(/^✓/)).toBeTruthy()
   })
@@ -423,7 +439,7 @@ describe('App voice answers', () => {
     vi.stubGlobal('SpeechRecognition', FakeRecognition)
     localStorage.setItem('cognitive-training:voice', 'on')
     render(<App repository={new MemoryRepository()} />)
-    clickInCard('Calcul mental', 'Commencer')
+    clickInCard('Opérations', 'Commencer')
     act(() => activeRecognition().onerror?.({ error: 'not-allowed' }))
     expect(screen.getByText(/Accès au micro refusé/)).toBeTruthy()
   })
@@ -434,7 +450,7 @@ describe('App difficulty ceiling, evolution and chart', () => {
 
   function attentionRecord(endLevel: number): SessionRecord {
     return {
-      id: `a${endLevel}`, domain: 'attention', startedAt: '2026-10-14T10:00:00.000Z',
+      id: `a${endLevel}`, domain: 'attention', exercise: 'stroop', startedAt: '2026-10-14T10:00:00.000Z',
       startLevel: endLevel, endLevel, items: 24, correct: 22, avgResponseMs: 900,
     }
   }
@@ -443,7 +459,7 @@ describe('App difficulty ceiling, evolution and chart', () => {
     const repo = new MemoryRepository()
     repo.records.push(attentionRecord(13))
     render(<App repository={repo} />)
-    clickInCard('Attention', 'Commencer')
+    clickInCard('Stroop', 'Commencer')
     expect(screen.getByText('Niveau 13')).toBeTruthy()
     expect(screen.getByText(/Suis la consigne/)).toBeTruthy()
     // Answer correctly until a MOT trial shows up, then check it was accepted.
@@ -461,25 +477,25 @@ describe('App difficulty ceiling, evolution and chart', () => {
   it('flags a session ending at the maximum level', () => {
     const repo = new MemoryRepository()
     repo.records.push({
-      id: 'top', domain: 'calculation', startedAt: '2026-10-14T10:00:00.000Z',
+      id: 'top', domain: 'calculation', exercise: 'arithmetic', startedAt: '2026-10-14T10:00:00.000Z',
       startLevel: 10, endLevel: 10, items: 20, correct: 20, avgResponseMs: 3000,
     })
     render(<App repository={repo} />)
-    clickInCard('Calcul mental', 'Commencer')
+    clickInCard('Opérations', 'Commencer')
     for (let i = 0; i < CALC_SESSION_LENGTH; i++) answerCurrentItem()
     expect(screen.getByText(/Niveau maximal atteint \(10\)/)).toBeTruthy()
   })
 
   it('does not flag a session below the maximum', () => {
     render(<App repository={new MemoryRepository()} />)
-    clickInCard('Calcul mental', 'Commencer')
+    clickInCard('Opérations', 'Commencer')
     for (let i = 0; i < CALC_SESSION_LENGTH; i++) answerCurrentItem()
     expect(screen.queryByText(/Niveau maximal atteint/)).toBeNull()
   })
 
   function calcHistory(levels: number[]): SessionRecord[] {
     return levels.map((endLevel, i) => ({
-      id: `c${i}`, domain: 'calculation', startedAt: `2026-10-${String(i + 1).padStart(2, '0')}T10:00:00.000Z`,
+      id: `c${i}`, domain: 'calculation', exercise: 'arithmetic', startedAt: `2026-10-${String(i + 1).padStart(2, '0')}T10:00:00.000Z`,
       startLevel: 1, endLevel, items: 20, correct: 10 + i, avgResponseMs: 4000 - i * 100,
     }))
   }
@@ -488,14 +504,14 @@ describe('App difficulty ceiling, evolution and chart', () => {
     const repo = new MemoryRepository()
     repo.records.push(...calcHistory([2, 3]))
     const { unmount } = render(<App repository={repo} />)
-    clickInCard('Calcul mental', 'Progrès')
+    clickInCard('Opérations', 'Progrès')
     expect(screen.getByText(/Ligne de base en cours : 2\/3/)).toBeTruthy()
     unmount()
 
     const repo2 = new MemoryRepository()
     repo2.records.push(...calcHistory([2, 3, 4, 6, 7, 8]))
     render(<App repository={repo2} />)
-    clickInCard('Calcul mental', 'Progrès')
+    clickInCard('Opérations', 'Progrès')
     // Baseline level (2+3+4)/3 = 3,0 ; recent (6+7+8)/3 = 7,0.
     expect(screen.getByText('▲ +4,0')).toBeTruthy()
     expect(screen.getByText(/Départ = tes 3 premières sessions/)).toBeTruthy()
@@ -505,7 +521,7 @@ describe('App difficulty ceiling, evolution and chart', () => {
     const repo = new MemoryRepository()
     repo.records.push(...calcHistory([2, 3, 5]))
     render(<App repository={repo} />)
-    clickInCard('Calcul mental', 'Progrès')
+    clickInCard('Opérations', 'Progrès')
     const chart = screen.getByRole('img', { name: /Niveau en fin de session sur 3 sessions, actuellement 5/ })
     expect(chart.querySelectorAll('circle')).toHaveLength(3)
 
@@ -523,7 +539,7 @@ describe('App difficulty ceiling, evolution and chart', () => {
     const repo = new MemoryRepository()
     repo.records.push(...calcHistory([2]))
     render(<App repository={repo} />)
-    clickInCard('Calcul mental', 'Progrès')
+    clickInCard('Opérations', 'Progrès')
     expect(screen.getByText('Le graphique apparaîtra après 2 sessions.')).toBeTruthy()
   })
 })

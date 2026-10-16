@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { getProgram, type ProgramId } from './core/programs'
-import { domainProgress } from './core/stats'
+import { progressOf, sessionsOf } from './core/stats'
 import type { SessionRecord } from './core/types'
 import { LocalStorageSessionRepository, type SessionRepository } from './storage/sessionRepository'
-import { DOMAIN_UI, type TrainableDomain } from './ui/domains'
+import { analyzeExercise, getExercise } from './ui/exercises'
 import { Home } from './ui/Home'
 import { buildProgramContext } from './ui/programContext'
 import { ProgramStepScreen, ProgramSummary, type ProgramRun } from './ui/ProgramScreens'
@@ -15,7 +15,7 @@ type Screen =
   | { name: 'home' }
   | {
       name: 'session'
-      domain: TrainableDomain
+      exercise: string
       startLevel: number
       focus: string | null
       length: number
@@ -23,8 +23,8 @@ type Screen =
       /** Set when the session is a step of a program. */
       run: ProgramRun | null
     }
-  | { name: 'results'; domain: TrainableDomain; record: SessionRecord }
-  | { name: 'progress'; domain: TrainableDomain }
+  | { name: 'results'; exercise: string; record: SessionRecord }
+  | { name: 'progress'; exercise: string }
   | { name: 'program-step'; run: ProgramRun }
   | { name: 'program-summary'; run: ProgramRun }
 
@@ -72,13 +72,13 @@ export default function App({ repository }: { repository?: SessionRepository }) 
     })
   }
 
-  function startSession(domain: TrainableDomain, length: number, run: ProgramRun | null) {
-    const config = DOMAIN_UI[domain]
+  function startSession(exercise: string, length: number, run: ProgramRun | null) {
+    const config = getExercise(exercise)
     setScreen({
       name: 'session',
-      domain,
-      startLevel: domainProgress(domain, records).currentLevel ?? config.bounds.min,
-      focus: config.analyze(records).weakest?.category ?? null,
+      exercise,
+      startLevel: progressOf(sessionsOf(records, exercise)).currentLevel ?? config.bounds.min,
+      focus: analyzeExercise(config, records).weakest?.category ?? null,
       length,
       key: Date.now(),
       run,
@@ -103,7 +103,7 @@ export default function App({ repository }: { repository?: SessionRepository }) 
     }
     if (screen.name !== 'session') throw new Error(`Session finished on screen ${screen.name}`)
     if (screen.run === null) {
-      setScreen({ name: 'results', domain: record.domain, record })
+      setScreen({ name: 'results', exercise: record.exercise, record })
       return
     }
     const run = { ...screen.run, completed: [...screen.run.completed, record] }
@@ -113,7 +113,7 @@ export default function App({ repository }: { repository?: SessionRepository }) 
   function continueProgram(run: ProgramRun) {
     const step = run.steps[run.completed.length]
     if (step === undefined) throw new Error('No program step left')
-    startSession(step.domain, step.length, run)
+    startSession(step.exercise, step.length, run)
   }
 
   const home = () => {
@@ -146,13 +146,13 @@ export default function App({ repository }: { repository?: SessionRepository }) 
         <Home
           records={records}
           now={now}
-          onStart={(domain) => startSession(domain, DOMAIN_UI[domain].defaultLength, null)}
-          onShowProgress={(domain) => setScreen({ name: 'progress', domain })}
+          onStart={(exercise) => startSession(exercise, getExercise(exercise).defaultLength, null)}
+          onShowProgress={(exercise) => setScreen({ name: 'progress', exercise })}
           onStartProgram={startProgram}
         />
       )}
       {screen.name === 'session' && (() => {
-        const { Session } = DOMAIN_UI[screen.domain]
+        const { Session } = getExercise(screen.exercise)
         return (
           <Session
             key={screen.key}
@@ -167,13 +167,13 @@ export default function App({ repository }: { repository?: SessionRepository }) 
       })()}
       {screen.name === 'results' && (
         <Results
-          config={DOMAIN_UI[screen.domain]}
+          config={getExercise(screen.exercise)}
           record={screen.record}
-          onRestart={() => startSession(screen.domain, DOMAIN_UI[screen.domain].defaultLength, null)}
+          onRestart={() => startSession(screen.exercise, getExercise(screen.exercise).defaultLength, null)}
           onHome={home}
         />
       )}
-      {screen.name === 'progress' && <Progress config={DOMAIN_UI[screen.domain]} records={records} onBack={home} />}
+      {screen.name === 'progress' && <Progress config={getExercise(screen.exercise)} records={records} onBack={home} />}
       {screen.name === 'program-step' && (
         <ProgramStepScreen run={screen.run} onContinue={() => continueProgram(screen.run)} onStop={home} />
       )}

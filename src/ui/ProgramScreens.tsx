@@ -1,7 +1,7 @@
 import type { ProgramStep } from '../core/programs'
 import { accuracy } from '../core/stats'
 import type { SessionRecord } from '../core/types'
-import { DOMAIN_UI } from './domains'
+import { getExercise } from './exercises'
 import { formatPercent, formatSeconds } from './format'
 
 export interface ProgramRun {
@@ -18,7 +18,7 @@ function StepList({ run }: { run: ProgramRun }) {
         const state = done !== undefined ? 'done' : i === run.completed.length ? 'current' : 'todo'
         return (
           <li key={i} className={state}>
-            {DOMAIN_UI[step.domain].title} · {step.length} essais
+            {getExercise(step.exercise).title} · {step.length} essais
             {done !== undefined && <span className="muted"> — {formatPercent(accuracy(done))}</span>}
           </li>
         )
@@ -31,7 +31,7 @@ function StepList({ run }: { run: ProgramRun }) {
 export function ProgramStepScreen({ run, onContinue, onStop }: { run: ProgramRun; onContinue: () => void; onStop: () => void }) {
   const next = run.steps[run.completed.length]
   if (next === undefined) throw new Error('ProgramStepScreen rendered with no step left')
-  const config = DOMAIN_UI[next.domain]
+  const config = getExercise(next.exercise)
   return (
     <section className="program-step">
       <h2>{run.title}</h2>
@@ -83,7 +83,7 @@ export function ProgramSummary({ run, onHome }: { run: ProgramRun; onHome: () =>
           <tbody>
             {run.completed.map((r) => (
               <tr key={r.id}>
-                <td>{DOMAIN_UI[r.domain].title}</td>
+                <td>{getExercise(r.exercise).title}</td>
                 <td>{formatPercent(accuracy(r))}</td>
                 <td>{formatSeconds(r.avgResponseMs)}</td>
                 <td>

@@ -1,4 +1,4 @@
-import type { CognitiveDomain, SessionRecord } from '../core/types'
+import { isCognitiveDomain, type CognitiveDomain, type SessionRecord } from '../core/types'
 
 /** Storage abstraction so localStorage can later be swapped for IndexedDB or a backend. */
 export interface SessionRepository {
@@ -13,18 +13,31 @@ export class StorageCorruptedError extends Error {
   }
 }
 
-/** Bump when SessionRecord changes shape, and add a migration. */
+/** Bump when SessionRecord changes shape incompatibly, and add a migration. */
 export const STORAGE_KEY = 'cognitive-training:sessions:v1'
 
-const DOMAINS: readonly CognitiveDomain[] = ['calculation', 'memory', 'attention', 'logic', 'speed']
+/**
+ * Sessions saved before exercises existed have no `exercise` field: each domain had a single exercise.
+ * They are migrated on read to that exercise, so history, levels and weak points carry over.
+ */
+export const LEGACY_EXERCISE_BY_DOMAIN: Readonly<Partial<Record<CognitiveDomain, string>>> = {
+  calculation: 'arithmetic',
+  memory: 'digit-span',
+  attention: 'stroop',
+  logic: 'number-series',
+  speed: 'pair-compare',
+}
 
-function isSessionRecord(value: unknown): value is SessionRecord {
+type StoredRecord = Omit<SessionRecord, 'exercise'> & { exercise?: string }
+
+function isStoredRecord(value: unknown): value is StoredRecord {
   if (typeof value !== 'object' || value === null) return false
   const r = value as Record<string, unknown>
   return (
     typeof r.id === 'string' &&
     typeof r.domain === 'string' &&
-    (DOMAINS as readonly string[]).includes(r.domain) &&
+    isCognitiveDomain(r.domain) &&
+    (r.exercise === undefined || (typeof r.exercise === 'string' && r.exercise.length > 0)) &&
     typeof r.startedAt === 'string' &&
     typeof r.startLevel === 'number' &&
     typeof r.endLevel === 'number' &&
@@ -42,6 +55,13 @@ function isBreakdown(value: unknown): boolean {
     const c = t as Record<string, unknown>
     return typeof c.items === 'number' && typeof c.correct === 'number' && typeof c.totalResponseMs === 'number'
   })
+}
+
+/** Fills in the exercise of legacy records; null when it cannot be inferred. */
+function migrate(record: StoredRecord): SessionRecord | null {
+  if (record.exercise !== undefined) return { ...record, exercise: record.exercise }
+  const legacy = LEGACY_EXERCISE_BY_DOMAIN[record.domain]
+  return legacy === undefined ? null : { ...record, exercise: legacy }
 }
 
 export class LocalStorageSessionRepository implements SessionRepository {
@@ -63,15 +83,16 @@ export class LocalStorageSessionRepository implements SessionRepository {
     if (!Array.isArray(parsed)) {
       throw new StorageCorruptedError(`Expected an array under "${STORAGE_KEY}"`)
     }
-    const invalidIndex = parsed.findIndex((item) => !isSessionRecord(item))
-    if (invalidIndex !== -1) {
-      throw new StorageCorruptedError(`Invalid session record at index ${invalidIndex}`)
-    }
-    return parsed as SessionRecord[]
+    return parsed.map((item: unknown, index) => {
+      const migrated = isStoredRecord(item) ? migrate(item) : null
+      if (migrated === null) throw new StorageCorruptedError(`Invalid session record at index ${index}`)
+      return migrated
+    })
   }
 
   add(record: SessionRecord): void {
-    if (!isSessionRecord(record)) throw new Error('Refusing to store an invalid session record')
+    const exercise: unknown = (record as { exercise?: unknown }).exercise
+    if (!isStoredRecord(record) || typeof exercise !== 'string') throw new Error('Refusing to store an invalid session record')
     const records = this.list()
     records.push(record)
     this.storage.setItem(STORAGE_KEY, JSON.stringify(records))

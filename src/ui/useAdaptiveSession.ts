@@ -16,15 +16,19 @@ export interface Feedback {
 
 interface Options<T extends SessionItem> {
   domain: CognitiveDomain
+  /** Exercise id stored on the session record. */
+  exercise: string
   bounds: LevelBounds
   length: number
   startLevel: number
   generate: (level: number) => T
   onFinish: (record: SessionRecord) => void
-  /** Optional per-item deadline; when it expires the item counts as wrong. */
+  /** Optional per-item deadline; when it expires the item counts as wrong unless `onTimeout` says otherwise. */
   timeLimitMs?: (item: T) => number | null
   /** Feedback shown when the deadline expires. */
   timeoutText?: (item: T) => string
+  /** Outcome of an expired deadline, for exercises where not answering can be right (Go/No-Go). */
+  onTimeout?: (item: T) => { correct: boolean; text: string }
 }
 
 export interface AdaptiveSession<T extends SessionItem> {
@@ -46,7 +50,7 @@ export interface AdaptiveSession<T extends SessionItem> {
  * Each exercise only renders its item and calls `answer`.
  */
 export function useAdaptiveSession<T extends SessionItem>(options: Options<T>): AdaptiveSession<T> {
-  const { domain, bounds, length, startLevel, generate, onFinish, timeLimitMs, timeoutText } = options
+  const { domain, exercise, bounds, length, startLevel, generate, onFinish, timeLimitMs, timeoutText, onTimeout } = options
   const [adaptive, setAdaptive] = useState(() => initialAdaptiveState(startLevel, bounds))
   const [item, setItem] = useState<T>(() => generate(initialAdaptiveState(startLevel, bounds).level))
   const [results, setResults] = useState<ItemResult[]>([])
@@ -76,6 +80,7 @@ export function useAdaptiveSession<T extends SessionItem>(options: Options<T>): 
           buildSessionRecord({
             id: crypto.randomUUID(),
             domain,
+            exercise,
             startedAt,
             startLevel: initialAdaptiveState(startLevel, bounds).level,
             endLevel: nextAdaptive.level,
@@ -90,7 +95,7 @@ export function useAdaptiveSession<T extends SessionItem>(options: Options<T>): 
       setAdaptive(nextAdaptive)
       setItem(generate(nextAdaptive.level))
     },
-    [item, results, adaptive, bounds, length, onFinish, domain, startedAt, startLevel, generate],
+    [item, results, adaptive, bounds, length, onFinish, domain, exercise, startedAt, startLevel, generate],
   )
 
   // Latest `answer` for the deadline timer, which must not restart on unrelated re-renders.
@@ -106,7 +111,10 @@ export function useAdaptiveSession<T extends SessionItem>(options: Options<T>): 
   useEffect(() => {
     shownAt.current = performance.now()
     if (timeLimit === null) return
-    const timer = setTimeout(() => answerRef.current(false, timeoutText?.(item) ?? 'Temps écoulé'), timeLimit)
+    const timer = setTimeout(() => {
+      const outcome = onTimeout?.(item) ?? { correct: false, text: timeoutText?.(item) ?? 'Temps écoulé' }
+      answerRef.current(outcome.correct, outcome.text)
+    }, timeLimit)
     return () => clearTimeout(timer)
     // Only a new item (re)starts the deadline.
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -15,7 +15,7 @@ export function MemorySession({ startLevel, focus, length, voice, onFinish, onQu
     const t = generateTrial(level, Math.random, focus)
     return { ...t, category: t.mode }
   }, [focus])
-  const session = useAdaptiveSession({ domain: 'memory', bounds: LEVEL_BOUNDS, length, startLevel, generate, onFinish })
+  const session = useAdaptiveSession({ domain: 'memory', exercise: 'digit-span', bounds: LEVEL_BOUNDS, length, startLevel, generate, onFinish })
   const { item: trial, restartTimer } = session
   const [visibleDigit, setVisibleDigit] = useState<number | null>(null)
   const [answering, setAnswering] = useState(false)

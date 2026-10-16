@@ -1,12 +1,37 @@
-/** Cognitive domains the app trains. Only `calculation` is implemented for now. */
-export type CognitiveDomain = 'calculation' | 'memory' | 'attention' | 'logic' | 'speed'
+/** Cognitive domains; each groups one or more exercises. */
+export type CognitiveDomain =
+  | 'calculation'
+  | 'memory'
+  | 'episodic'
+  | 'attention'
+  | 'executive'
+  | 'logic'
+  | 'speed'
+  | 'language'
+  | 'visuospatial'
+
+export const COGNITIVE_DOMAINS: readonly CognitiveDomain[] = [
+  'calculation',
+  'memory',
+  'episodic',
+  'attention',
+  'executive',
+  'logic',
+  'speed',
+  'language',
+  'visuospatial',
+]
+
+export function isCognitiveDomain(value: string): value is CognitiveDomain {
+  return (COGNITIVE_DOMAINS as readonly string[]).includes(value)
+}
 
 export type Rng = () => number
 
 /** Outcome of a single answered item, domain-agnostic. */
 export interface ItemResult {
   level: number
-  /** Sub-skill within the domain (e.g. the operator for calculation), used to spot weak points. */
+  /** Sub-skill within the exercise (e.g. the operator for arithmetic), used to spot weak points. */
   category: string
   correct: boolean
   responseMs: number
@@ -22,6 +47,8 @@ export interface CategoryTotals {
 export interface SessionRecord {
   id: string
   domain: CognitiveDomain
+  /** Exercise id (see ui/exercises.ts). Level, history and weak points are tracked per exercise. */
+  exercise: string
   startedAt: string // ISO 8601
   startLevel: number
   endLevel: number

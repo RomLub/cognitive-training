@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   accuracy,
   categoryStats,
-  domainProgress,
+  progressOf,
   MIN_ITEMS_FOR_WEAKNESS,
-  recentSessions,
+  sessionsOf,
   summarizeItems,
   weakestCategory,
   type CategoryStats,
@@ -15,6 +15,7 @@ function session(day: number, correct: number, endLevel: number): SessionRecord 
   return {
     id: `s${day}`,
     domain: 'calculation',
+    exercise: 'arithmetic',
     startedAt: `2026-10-${String(day).padStart(2, '0')}T10:00:00.000Z`,
     startLevel: 1,
     endLevel,
@@ -31,8 +32,7 @@ describe('stats', () => {
   })
 
   it('reports no progress for an untrained domain', () => {
-    expect(domainProgress('calculation', [])).toEqual({
-      domain: 'calculation',
+    expect(progressOf([])).toEqual({
       sessions: 0,
       currentLevel: null,
       bestLevel: null,
@@ -41,7 +41,7 @@ describe('stats', () => {
   })
 
   it('uses the most recent session for the current level, regardless of input order', () => {
-    const p = domainProgress('calculation', [session(3, 5, 2), session(1, 5, 6), session(2, 5, 4)])
+    const p = progressOf([session(3, 5, 2), session(1, 5, 6), session(2, 5, 4)])
     expect(p.currentLevel).toBe(2)
     expect(p.bestLevel).toBe(6)
     expect(p.accuracyTrend).toBeNull()
@@ -50,12 +50,12 @@ describe('stats', () => {
   it('computes accuracy trend between the last 5 and the previous 5 sessions', () => {
     const older = [1, 2, 3, 4, 5].map((d) => session(d, 6, 3))
     const recent = [6, 7, 8, 9, 10].map((d) => session(d, 8, 4))
-    expect(domainProgress('calculation', [...older, ...recent]).accuracyTrend).toBeCloseTo(0.2)
+    expect(progressOf([...older, ...recent]).accuracyTrend).toBeCloseTo(0.2)
   })
 
-  it('ignores other domains', () => {
-    const other: SessionRecord = { ...session(1, 10, 9), domain: 'memory' }
-    expect(domainProgress('calculation', [other]).sessions).toBe(0)
+  it('selects the sessions of one exercise', () => {
+    const other: SessionRecord = { ...session(1, 10, 9), exercise: 'chain' }
+    expect(sessionsOf([other, session(2, 5, 3)], 'arithmetic').map((r) => r.id)).toEqual(['s2'])
   })
 })
 
@@ -81,9 +81,9 @@ describe('per-category stats', () => {
     expect(stats).toEqual([{ category: '×', items: 10, accuracy: 0.8, avgResponseMs: 2000 }])
   })
 
-  it('keeps only the most recent sessions of a domain, oldest first', () => {
-    const records = [session(3, 5, 1), session(1, 5, 1), session(2, 5, 1), { ...session(4, 5, 1), domain: 'memory' as const }]
-    expect(recentSessions('calculation', records, 2).map((r) => r.id)).toEqual(['s2', 's3'])
+  it('sorts the sessions of an exercise oldest first', () => {
+    const records = [session(3, 5, 1), session(1, 5, 1), session(2, 5, 1), { ...session(4, 5, 1), exercise: 'chain' }]
+    expect(sessionsOf(records, 'arithmetic').map((r) => r.id)).toEqual(['s1', 's2', 's3'])
   })
 })
 

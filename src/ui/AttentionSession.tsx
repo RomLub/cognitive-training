@@ -47,6 +47,7 @@ export function AttentionSession({ startLevel, focus, length, voice, onFinish, o
   )
   const session = useAdaptiveSession({
     domain: 'attention',
+    exercise: 'stroop',
     bounds: LEVEL_BOUNDS,
     length,
     startLevel,

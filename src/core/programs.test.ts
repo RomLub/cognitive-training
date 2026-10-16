@@ -1,71 +1,99 @@
 import { describe, expect, it } from 'vitest'
-import type { LevelBounds } from './adaptive'
-import { getProgram, PROGRAMS, rankDomainsByWeakness, type ProgramContext } from './programs'
+import { exerciseForDomain, getProgram, PROGRAMS, rankDomainsByWeakness, type CatalogExercise, type ProgramContext } from './programs'
 import type { CognitiveDomain, SessionRecord } from './types'
 
+const B10 = { min: 1, max: 10 }
+const CATALOG: CatalogExercise[] = [
+  { id: 'arithmetic', domain: 'calculation', bounds: B10 },
+  { id: 'chain', domain: 'calculation', bounds: B10 },
+  { id: 'digit-span', domain: 'memory', bounds: B10 },
+  { id: 'stroop', domain: 'attention', bounds: { min: 1, max: 20 } },
+  { id: 'number-series', domain: 'logic', bounds: B10 },
+  { id: 'pair-compare', domain: 'speed', bounds: B10 },
+]
 const DOMAINS: CognitiveDomain[] = ['calculation', 'memory', 'attention', 'logic', 'speed']
-const BOUNDS = Object.fromEntries(DOMAINS.map((d) => [d, { min: 1, max: 10 }])) as Record<CognitiveDomain, LevelBounds>
 
-function record(domain: CognitiveDomain, endLevel: number, day = 1): SessionRecord {
+function record(exercise: string, endLevel: number, day = 1): SessionRecord {
+  const domain = CATALOG.find((e) => e.id === exercise)!.domain
   return {
-    id: `${domain}-${day}`, domain, startedAt: `2026-10-${String(day).padStart(2, '0')}T10:00:00.000Z`,
+    id: `${exercise}-${day}`, domain, exercise, startedAt: `2026-10-${String(day).padStart(2, '0')}T10:00:00.000Z`,
     startLevel: endLevel, endLevel, items: 10, correct: 8, avgResponseMs: 2000,
   }
 }
 
 describe('rankDomainsByWeakness', () => {
   it('puts untrained domains first, then the lowest relative level', () => {
-    const records = [record('calculation', 7), record('memory', 2), record('attention', 5), record('logic', 9)]
-    expect(rankDomainsByWeakness(DOMAINS, records, BOUNDS)).toEqual(['speed', 'memory', 'attention', 'calculation', 'logic'])
+    const records = [record('arithmetic', 7), record('digit-span', 2), record('stroop', 9), record('number-series', 9)]
+    // Stroop 9/20 is relatively weaker than logic 9/10.
+    expect(rankDomainsByWeakness(DOMAINS, CATALOG, records)).toEqual(['speed', 'memory', 'attention', 'calculation', 'logic'])
   })
 
-  it('normalizes levels by each domain range', () => {
-    const bounds = { ...BOUNDS, memory: { min: 1, max: 4 } }
-    // Memory 3/4 (ratio 0.67) is stronger than calculation 5/10 (ratio 0.44).
-    const ranking = rankDomainsByWeakness(['calculation', 'memory'], [record('calculation', 5), record('memory', 3)], bounds)
-    expect(ranking).toEqual(['calculation', 'memory'])
+  it('averages the trained exercises of a domain', () => {
+    // Calculation: (1/9 + 1) / 2 ≈ 0.56 vs memory 4/9 ≈ 0.44.
+    const records = [record('arithmetic', 2), record('chain', 10), record('digit-span', 5)]
+    expect(rankDomainsByWeakness(['calculation', 'memory'], CATALOG, records)).toEqual(['memory', 'calculation'])
   })
 
   it('breaks ties with fewer sessions, then the given order', () => {
-    const records = [record('calculation', 3, 1), record('calculation', 3, 2), record('memory', 3)]
-    expect(rankDomainsByWeakness(['calculation', 'memory'], records, BOUNDS)).toEqual(['memory', 'calculation'])
-    expect(rankDomainsByWeakness(['logic', 'speed'], [], BOUNDS)).toEqual(['logic', 'speed'])
+    const records = [record('arithmetic', 3, 1), record('arithmetic', 3, 2), record('digit-span', 3)]
+    expect(rankDomainsByWeakness(['calculation', 'memory'], CATALOG, records)).toEqual(['memory', 'calculation'])
+    expect(rankDomainsByWeakness(['logic', 'speed'], CATALOG, [])).toEqual(['logic', 'speed'])
+  })
+})
+
+describe('exerciseForDomain', () => {
+  it('prefers an untried exercise, in catalog order', () => {
+    expect(exerciseForDomain('calculation', CATALOG, [])).toBe('arithmetic')
+    expect(exerciseForDomain('calculation', CATALOG, [record('arithmetic', 3)])).toBe('chain')
+  })
+
+  it('otherwise picks the least recently played', () => {
+    const records = [record('arithmetic', 3, 5), record('chain', 3, 2)]
+    expect(exerciseForDomain('calculation', CATALOG, records)).toBe('chain')
+  })
+
+  it('fails loudly for a domain without exercise', () => {
+    expect(() => exerciseForDomain('language', CATALOG, [])).toThrow()
   })
 })
 
 describe('programs', () => {
+  const lengths: Record<string, number> = { arithmetic: 10, chain: 8, practical: 8, estimation: 10, 'digit-span': 6 }
   const ctx: ProgramContext = {
-    ranking: ['logic', 'speed', 'memory', 'calculation', 'attention'],
-    shortLength: { calculation: 10, memory: 6, attention: 12, logic: 6, speed: 12 },
+    domainRanking: ['logic', 'speed', 'memory', 'calculation', 'attention', 'language'],
+    exerciseFor: (d) => CATALOG.find((e) => e.domain === d)?.id ?? `${d}-ex`,
+    shortLength: (id) => lengths[id] ?? 12,
+    untried: ['chain', 'digit-span', 'stroop', 'number-series', 'pair-compare'],
   }
 
-  it('daily: every domain, weakest first with a double set', () => {
+  it('daily: the 5 weakest domains, one exercise each, the weakest doubled', () => {
     expect(getProgram('daily').steps(ctx)).toEqual([
-      { domain: 'logic', length: 12 },
-      { domain: 'speed', length: 12 },
-      { domain: 'memory', length: 6 },
-      { domain: 'calculation', length: 10 },
-      { domain: 'attention', length: 12 },
+      { exercise: 'number-series', length: 24 },
+      { exercise: 'pair-compare', length: 12 },
+      { exercise: 'digit-span', length: 6 },
+      { exercise: 'arithmetic', length: 10 },
+      { exercise: 'stroop', length: 12 },
     ])
   })
 
-  it('express: calculation then the two weakest other domains', () => {
-    expect(getProgram('express').steps({ ...ctx, ranking: ['calculation', 'memory', 'logic', 'speed', 'attention'] })).toEqual([
-      { domain: 'calculation', length: 10 },
-      { domain: 'memory', length: 6 },
-      { domain: 'logic', length: 6 },
+  it('express: a calculation exercise then the two weakest other domains', () => {
+    expect(getProgram('express').steps({ ...ctx, domainRanking: ['calculation', 'memory', 'logic'] }).map((s) => s.exercise)).toEqual([
+      'arithmetic',
+      'digit-span',
+      'number-series',
     ])
   })
 
-  it('calculation focus: two long calculation sets around working memory', () => {
-    expect(getProgram('calculation-focus').steps(ctx).map((s) => s.domain)).toEqual(['calculation', 'memory', 'calculation'])
+  it('calculation focus: the four calculation exercises', () => {
+    expect(getProgram('calculation-focus').steps(ctx).map((s) => s.exercise)).toEqual(['arithmetic', 'chain', 'practical', 'estimation'])
   })
 
-  it('every program has steps with positive lengths', () => {
-    for (const p of PROGRAMS) {
-      const steps = p.steps(ctx)
-      expect(steps.length).toBeGreaterThan(0)
-      for (const s of steps) expect(s.length).toBeGreaterThan(0)
-    }
+  it('discovery: up to 4 untried exercises, nothing once all were tried', () => {
+    expect(getProgram('discovery').steps(ctx).map((s) => s.exercise)).toEqual(['chain', 'digit-span', 'stroop', 'number-series'])
+    expect(getProgram('discovery').steps({ ...ctx, untried: [] })).toEqual([])
+  })
+
+  it('every program step has a positive length', () => {
+    for (const p of PROGRAMS) for (const s of p.steps(ctx)) expect(s.length).toBeGreaterThan(0)
   })
 })

@@ -13,7 +13,7 @@ export function LogicSession({ startLevel, focus, length, voice, onFinish, onQui
     const t = generateTrial(level, Math.random, focus)
     return { ...t, category: t.rule }
   }, [focus])
-  const session = useAdaptiveSession({ domain: 'logic', bounds: LEVEL_BOUNDS, length, startLevel, generate, onFinish })
+  const session = useAdaptiveSession({ domain: 'logic', exercise: 'number-series', bounds: LEVEL_BOUNDS, length, startLevel, generate, onFinish })
   const [input, setInput] = useState('')
   const trial = session.item
 

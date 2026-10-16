@@ -27,6 +27,7 @@ export function SpeedSession({ startLevel, focus, length, voice, onFinish, onQui
   )
   const session = useAdaptiveSession({
     domain: 'speed',
+    exercise: 'pair-compare',
     bounds: LEVEL_BOUNDS,
     length,
     startLevel,

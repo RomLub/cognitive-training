@@ -6,6 +6,7 @@ describe('buildSessionRecord', () => {
     const record = buildSessionRecord({
       id: 'x',
       domain: 'calculation',
+      exercise: 'arithmetic',
       startedAt: new Date('2026-10-15T10:00:00Z'),
       startLevel: 2,
       endLevel: 3,
@@ -17,6 +18,7 @@ describe('buildSessionRecord', () => {
     expect(record).toEqual({
       id: 'x',
       domain: 'calculation',
+      exercise: 'arithmetic',
       startedAt: '2026-10-15T10:00:00.000Z',
       startLevel: 2,
       endLevel: 3,

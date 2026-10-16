@@ -1,28 +1,31 @@
-import { domainEvolution } from '../core/baseline'
+import { evolutionOf } from '../core/baseline'
 import { RECENT_WINDOW } from '../core/focus'
-import { accuracy, domainProgress, MIN_ITEMS_FOR_WEAKNESS } from '../core/stats'
+import { accuracy, MIN_ITEMS_FOR_WEAKNESS, progressOf, sessionsOf } from '../core/stats'
 import type { SessionRecord } from '../core/types'
 import { CategoryTable } from './CategoryTable'
-import type { DomainUi } from './domains'
+import { analyzeExercise, DOMAIN_INFO, type ExerciseUi } from './exercises'
 import { EvolutionPanel } from './Evolution'
 import { capitalize, formatDate, formatPercent, formatSeconds } from './format'
 import { LevelChart } from './LevelChart'
 
 interface Props {
-  config: DomainUi
+  config: ExerciseUi
   records: readonly SessionRecord[]
   onBack: () => void
 }
 
 export function Progress({ config, records, onBack }: Props) {
-  const progress = domainProgress(config.domain, records)
-  const { stats, weakest } = config.analyze(records)
-  const sessions = records.filter((r) => r.domain === config.domain).toReversed()
+  const history = sessionsOf(records, config.id)
+  const progress = progressOf(history)
+  const { stats, weakest } = analyzeExercise(config, records)
+  const sessions = history.toReversed()
 
   return (
     <section className="progress-page">
       <header className="page-header">
-        <h2>Progrès — {config.title}</h2>
+        <h2>
+          Progrès — {config.title} <span className="muted small">{DOMAIN_INFO[config.domain].title}</span>
+        </h2>
         <button type="button" className="link" onClick={onBack}>
           ← Accueil
         </button>
@@ -55,7 +58,7 @@ export function Progress({ config, records, onBack }: Props) {
       <LevelChart records={sessions} bounds={config.bounds} />
 
       <h3>Depuis le début</h3>
-      <EvolutionPanel evolution={domainEvolution(config.domain, records)} />
+      <EvolutionPanel evolution={evolutionOf(history)} />
 
       <h3>
         Par {config.categoryNoun} ({RECENT_WINDOW} dernières sessions)

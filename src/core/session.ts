@@ -4,6 +4,7 @@ import type { CognitiveDomain, ItemResult, SessionRecord } from './types'
 export function buildSessionRecord(params: {
   id: string
   domain: CognitiveDomain
+  exercise: string
   startedAt: Date
   startLevel: number
   endLevel: number
@@ -12,6 +13,7 @@ export function buildSessionRecord(params: {
   return {
     id: params.id,
     domain: params.domain,
+    exercise: params.exercise,
     startedAt: params.startedAt.toISOString(),
     startLevel: params.startLevel,
     endLevel: params.endLevel,

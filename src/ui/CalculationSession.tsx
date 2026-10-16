@@ -14,7 +14,7 @@ export function CalculationSession({ startLevel, focus, length, voice, onFinish,
     const p = generateProblem(level, Math.random, focus)
     return { ...p, category: p.operator }
   }, [focus])
-  const session = useAdaptiveSession({ domain: 'calculation', bounds: LEVEL_BOUNDS, length, startLevel, generate, onFinish })
+  const session = useAdaptiveSession({ domain: 'calculation', exercise: 'arithmetic', bounds: LEVEL_BOUNDS, length, startLevel, generate, onFinish })
   const [input, setInput] = useState('')
   const problem = session.item
 
