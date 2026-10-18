@@ -92,6 +92,21 @@ export const INSTRUCTIONS: Readonly<Record<string, readonly string[]>> = {
     'Deux formes s’affichent ; celle de droite a été tournée.',
     'Est-ce la même forme, ou son reflet dans un miroir ? ← même forme, → miroir.',
   ],
+  'logic-grid': [
+    'Lis les indices et déduis qui a quoi : chaque personne a une seule valeur par colonne, jamais la même qu’une autre.',
+    'Pas de chrono : prends ton temps, utilise le brouillon ou une feuille. Tous les indices sont nécessaires.',
+    'Remplis toute la grille puis valide ; la solution s’affiche ensuite.',
+  ],
+  knights: [
+    'Sur cette île, les sincères disent toujours la vérité et les menteurs mentent toujours.',
+    'Chaque habitant fait une affirmation. Une seule répartition est possible : trouve-la, sans te presser.',
+    'Astuce : fais une hypothèse sur une personne, puis vois si elle mène à une contradiction.',
+  ],
+  'word-problems': [
+    'Des problèmes en plusieurs étapes : âges, mélanges, travail à plusieurs, vitesses, dénombrement.',
+    'Pose-les sur papier si tu veux, sans limite de temps. La réponse est toujours un nombre entier.',
+    'Tape le résultat puis Valider ; la démarche détaillée s’affiche ensuite.',
+  ],
 }
 
 export function instructionsFor(exercise: string): readonly string[] {

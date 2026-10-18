@@ -70,6 +70,9 @@ Code : `src/sync/` (interfaces, fusion des historiques, implémentation Supabase
 | Langage | Fluence verbale | citer un maximum de mots en 60 s (catégorie ou lettre), idéalement à voix haute | catégorie / lettre |
 | | Anagrammes | retrouver un mot à partir de ses lettres mélangées | mots concrets / abstraits |
 | Visuo-spatial | Rotation mentale | même forme tournée, ou reflet en miroir ? | même / miroir |
+| Réflexion | Énigmes logiques | qui a quoi ? grille à remplir d'après des indices tous nécessaires (solution unique vérifiée) | classique / maisons en rang |
+| Réflexion | Menteurs & sincères | une île où certains mentent toujours : qui est qui ? | affirmations simples / et-ou-si / dénombrement |
+| Réflexion | Problèmes à étapes | âges, mélanges, travail à plusieurs, vitesses, dénombrement ; à poser sur papier | par type de problème |
 
 Tous les exercices partagent :
 - **20 niveaux adaptatifs** par exercice (les niveaux 11 à 20 durcissent les nombres, les délais ou les leurres) : 3 réussites d'affilée → niveau +1, 2 échecs d'affilée → niveau −1 ;
@@ -89,6 +92,8 @@ Tous les exercices partagent :
   écran de fin festif. Les XP se calculent à partir de l'historique : rien de plus à stocker ni à synchroniser.
 - Animations seulement en réponse à une action, désactivées si le système demande de réduire les animations.
 
+Les exercices **Réflexion** n'ont aucune limite de temps (le temps de réflexion est seulement affiché), proposent un brouillon, et affichent la solution détaillée avant le problème suivant ; un problème résolu vaut 15 XP.
+
 Chaque exercice commence par un **écran de consigne** : rien ne démarre (ni chrono) avant « C'est parti ! ».
 
 ## Progrès
@@ -104,6 +109,7 @@ Il n'y a pas de comparaison à la population : les niveaux sont des paliers inte
 - **Express** (~5 min) : un exercice de calcul puis les deux autres domaines les plus faibles.
 - **Focus calcul** (~12 min) : opérations, calcul en chaîne, pourcentages, estimation.
 - **Découverte** (~8 min) : jusqu'à 4 exercices jamais faits, pris dans des domaines différents.
+- **Réflexion profonde** (~20 min) : une énigme logique, une île de menteurs et un problème à étapes. Les autres programmes n'incluent pas ce domaine, plus lent.
 
 Le domaine le plus faible = celui dont le niveau moyen (rapporté à l'échelle de chaque exercice) est le plus bas ;
 un domaine jamais entraîné passe en premier. L'accueil affiche la **série** de jours consécutifs d'entraînement.

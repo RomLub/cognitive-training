@@ -42,7 +42,8 @@ export interface AdaptiveSession<T extends SessionItem> {
   feedback: Feedback | null
   /** Active deadline for the current item, for display. */
   timeLimit: number | null
-  answer: (correct: boolean, feedbackText: string) => void
+  /** `responseMs` overrides the measured time, e.g. when the user reads a correction before moving on. */
+  answer: (correct: boolean, feedbackText: string, responseMs?: number) => void
   /** Restarts the response timer, e.g. once a memory sequence has finished playing. */
   restartTimer: () => void
 }
@@ -63,7 +64,7 @@ export function useAdaptiveSession<T extends SessionItem>(options: Options<T>): 
   const timeLimit = timeLimitMs?.(item) ?? null
 
   const answer = useCallback(
-    (correct: boolean, feedbackText: string) => {
+    (correct: boolean, feedbackText: string, responseMs?: number) => {
       // Guards against a double answer (e.g. a click racing the deadline).
       if (answeredItem.current === item) return
       answeredItem.current = item
@@ -72,7 +73,7 @@ export function useAdaptiveSession<T extends SessionItem>(options: Options<T>): 
         level: item.level,
         category: item.category,
         correct,
-        responseMs: Math.round(performance.now() - shownAt.current),
+        responseMs: Math.round(responseMs ?? performance.now() - shownAt.current),
       }
       const nextResults = [...results, result]
       const nextAdaptive = updateAdaptive(adaptive, correct, bounds)

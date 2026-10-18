@@ -43,6 +43,10 @@ import { PAIR_KIND_LABELS, SYMBOL_SET_LABELS } from '../domains/speed/labels'
 import * as symbolDigit from '../domains/speed/symbolDigit'
 import { ROTATION_KIND_LABELS } from '../domains/visuospatial/labels'
 import * as rotation from '../domains/visuospatial/rotation'
+import * as knights from '../domains/reflection/knights'
+import { GRID_KIND_LABELS, KNIGHT_KIND_LABELS, PROBLEM_KIND_LABELS } from '../domains/reflection/labels'
+import * as logicGrid from '../domains/reflection/logicGrid'
+import * as wordProblems from '../domains/reflection/wordProblems'
 import { AnagramSession } from './AnagramSession'
 import { AttentionSession } from './AttentionSession'
 import { CalculationSession } from './CalculationSession'
@@ -52,6 +56,8 @@ import { EstimationSession } from './EstimationSession'
 import { FlankerSession } from './FlankerSession'
 import { FluencySession } from './FluencySession'
 import { GoNoGoSession } from './GoNoGoSession'
+import { KnightsSession } from './KnightsSession'
+import { LogicGridSession } from './LogicGridSession'
 import { LogicSession } from './LogicSession'
 import { MatrixSession } from './MatrixSession'
 import { MemorySession } from './MemorySession'
@@ -67,6 +73,7 @@ import { TowerSession } from './TowerSession'
 import { TrailSession } from './TrailSession'
 import { VisualSearchSession } from './VisualSearchSession'
 import { WordListSession } from './WordListSession'
+import { WordProblemSession } from './WordProblemSession'
 
 /** Title, icon and identity color of each domain (icons on home, accents on cards). */
 export const DOMAIN_INFO: Readonly<Record<CognitiveDomain, { title: string; icon: string; color: string }>> = {
@@ -79,6 +86,7 @@ export const DOMAIN_INFO: Readonly<Record<CognitiveDomain, { title: string; icon
   speed: { title: 'Vitesse de traitement', icon: '⏱️', color: '#ff8a3d' },
   language: { title: 'Langage', icon: '💬', color: '#2ec4a0' },
   visuospatial: { title: 'Visuo-spatial', icon: '🔷', color: '#8bd13d' },
+  reflection: { title: 'Réflexion', icon: '🦉', color: '#b0763c' },
 }
 
 export interface ExerciseUi {
@@ -429,6 +437,48 @@ export const EXERCISES: readonly ExerciseUi[] = [
     defaultLength: rotation.SESSION_LENGTH,
     shortLength: 10,
     Session: session(RotationSession),
+  },
+  {
+    id: 'logic-grid',
+    domain: 'reflection',
+    title: 'Énigmes logiques',
+    description: 'Retrouver qui a quoi à partir d’indices. Plusieurs minutes par énigme.',
+    categoryNoun: 'type d’énigme',
+    labels: GRID_KIND_LABELS,
+    order: logicGrid.GRID_KINDS,
+    isCategory: logicGrid.isGridKind,
+    bounds: logicGrid.LEVEL_BOUNDS,
+    defaultLength: logicGrid.SESSION_LENGTH,
+    shortLength: 1,
+    Session: session(LogicGridSession),
+  },
+  {
+    id: 'knights',
+    domain: 'reflection',
+    title: 'Menteurs & sincères',
+    description: 'Démêler qui dit vrai sur une île de menteurs.',
+    categoryNoun: 'type d’affirmation',
+    labels: KNIGHT_KIND_LABELS,
+    order: knights.KNIGHT_KINDS,
+    isCategory: knights.isKnightKind,
+    bounds: knights.LEVEL_BOUNDS,
+    defaultLength: knights.SESSION_LENGTH,
+    shortLength: 1,
+    Session: session(KnightsSession),
+  },
+  {
+    id: 'word-problems',
+    domain: 'reflection',
+    title: 'Problèmes à étapes',
+    description: 'Âges, mélanges, vitesses, dénombrement : à poser, de préférence sur papier.',
+    categoryNoun: 'type de problème',
+    labels: PROBLEM_KIND_LABELS,
+    order: wordProblems.PROBLEM_KINDS,
+    isCategory: wordProblems.isProblemKind,
+    bounds: wordProblems.LEVEL_BOUNDS,
+    defaultLength: wordProblems.SESSION_LENGTH,
+    shortLength: 1,
+    Session: session(WordProblemSession),
   },
 ]
 

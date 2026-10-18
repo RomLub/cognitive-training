@@ -7,16 +7,16 @@ export interface ProgramStep {
   length: number
 }
 
-export type ProgramId = 'daily' | 'express' | 'calculation-focus' | 'discovery'
+export type ProgramId = 'daily' | 'express' | 'calculation-focus' | 'discovery' | 'reflection'
 
 export interface ProgramContext {
-  /** Domains from weakest to strongest. */
+  /** Domains from weakest to strongest (quick-paced ones: "Réflexion" has its own program). */
   domainRanking: readonly CognitiveDomain[]
   /** Exercise to play for a domain: an untried one first, then the least recently played. */
   exerciseFor: (domain: CognitiveDomain) => string
   /** Short session length of an exercise, for program steps. */
   shortLength: (exercise: string) => number
-  /** Exercises never played, in catalog order. */
+  /** Quick-paced exercises never played, in catalog order. */
   untried: readonly string[]
 }
 
@@ -110,6 +110,14 @@ export const PROGRAMS: readonly ProgramDef[] = [
     description: 'Jusqu’à 4 exercices que tu n’as encore jamais faits.',
     minutes: 8,
     steps: ({ untried, shortLength }) => untried.slice(0, 4).map((exercise) => ({ exercise, length: shortLength(exercise) })),
+  },
+  {
+    id: 'reflection',
+    title: 'Réflexion profonde',
+    description: 'Une énigme logique, une île de menteurs et un problème à étapes, sans chrono.',
+    minutes: 20,
+    steps: ({ shortLength }) =>
+      ['logic-grid', 'knights', 'word-problems'].map((exercise) => ({ exercise, length: shortLength(exercise) })),
   },
 ]
 

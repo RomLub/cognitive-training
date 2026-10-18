@@ -3,15 +3,19 @@ import type { SessionRecord } from './types'
 
 /**
  * Experience points, derived from the session history (nothing extra stored, so they sync with it):
- * 2 XP per correct answer, plus 3 XP per level gained during the session.
+ * 2 XP per correct answer (15 for a reflection problem), plus 3 XP per level gained during the session.
  */
 export const XP_PER_CORRECT = 2
 export const XP_PER_LEVEL_GAINED = 3
 /** XP to earn each day; roughly two short sessions. */
 export const DAILY_GOAL_XP = 40
 
-export function sessionXp(record: Pick<SessionRecord, 'correct' | 'startLevel' | 'endLevel'>): number {
-  return record.correct * XP_PER_CORRECT + Math.max(0, record.endLevel - record.startLevel) * XP_PER_LEVEL_GAINED
+/** A solved "Réflexion" problem takes minutes, not seconds: it is worth as much as a short session. */
+export const XP_PER_REFLECTION_CORRECT = 15
+
+export function sessionXp(record: Pick<SessionRecord, 'domain' | 'correct' | 'startLevel' | 'endLevel'>): number {
+  const perCorrect = record.domain === 'reflection' ? XP_PER_REFLECTION_CORRECT : XP_PER_CORRECT
+  return record.correct * perCorrect + Math.max(0, record.endLevel - record.startLevel) * XP_PER_LEVEL_GAINED
 }
 
 export interface XpSummary {

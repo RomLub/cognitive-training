@@ -9,6 +9,7 @@ export type CognitiveDomain =
   | 'speed'
   | 'language'
   | 'visuospatial'
+  | 'reflection'
 
 export const COGNITIVE_DOMAINS: readonly CognitiveDomain[] = [
   'calculation',
@@ -20,6 +21,7 @@ export const COGNITIVE_DOMAINS: readonly CognitiveDomain[] = [
   'speed',
   'language',
   'visuospatial',
+  'reflection',
 ]
 
 export function isCognitiveDomain(value: string): value is CognitiveDomain {
